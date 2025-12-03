@@ -8,12 +8,12 @@ import java.util.Scanner;
 public class Main {
 
     // Base de datos
-    static Administrador admin;
-    static ArrayList<Usuario> usuarios = new ArrayList<>();
+    public static Administrador admin;
+    public static ArrayList<Usuario> usuarios = new ArrayList<>();
     public static ArrayList<Evento> eventos = new ArrayList<>();
     static ArrayList<Localidad> localidades = new ArrayList<>();
-    static ArrayList<Tiquete> inventario = new ArrayList<>();
-    static ArrayList<Pago> pagos = new ArrayList<>();         
+    public static ArrayList<Tiquete> inventario = new ArrayList<>();
+    public static ArrayList<Pago> pagos = new ArrayList<>();         
 
     // Persistencia 
     static DataStore DS = new DataStore();
