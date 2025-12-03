@@ -35,7 +35,7 @@ public class VentanaPrincipal extends JFrame {
 	    DataStore ds = new DataStore();
 	    ds.loadAll();  // Esto llena Main.usuarios, Main.eventos, etc. desde los CSV
 	    
-	    //System.out.println("Eventos cargados en meoria " + Main.eventos.size());
+	    System.out.println("Eventos cargados en meoria " + Main.eventos.size());
 
 	    EventQueue.invokeLater(new Runnable() {
 	        public void run() {

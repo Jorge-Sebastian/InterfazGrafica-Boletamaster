@@ -21,6 +21,8 @@ import javax.swing.BorderFactory;
 import javax.swing.JOptionPane;
 
 public class VentanaOrganizador extends JFrame {
+	
+	private Organizador organizador;
 
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
@@ -63,7 +65,8 @@ public class VentanaOrganizador extends JFrame {
     }
 
 
-    public VentanaOrganizador(IServicioEventos servicioEventos) {
+    public VentanaOrganizador(Organizador organizador, IServicioEventos servicioEventos) {
+    	this.organizador = organizador;
     	this.servicioEventos = servicioEventos;
         setTitle("Boletamaster - Organizador");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -83,7 +86,7 @@ public class VentanaOrganizador extends JFrame {
         panelHeader.setLayout(new BorderLayout());
         contentPane.add(panelHeader, BorderLayout.NORTH);
 
-        JLabel lblTitulo = new JLabel("Panel de organizador");
+        JLabel lblTitulo = new JLabel("Panel de organizador (" + organizador.getLogin() + ")");
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         panelHeader.add(lblTitulo, BorderLayout.WEST);
 

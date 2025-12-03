@@ -132,7 +132,7 @@ public class VentanaLogin extends JFrame {
                     mostrarErrorCredenciales();
                 } else {
                     IServicioEventos servicioEventos = new ServicioEventosCSV();
-                    VentanaOrganizador vo = new VentanaOrganizador(servicioEventos);
+                    VentanaOrganizador vo = new VentanaOrganizador(o, servicioEventos);
                     vo.setLocationRelativeTo(this);
                     vo.setVisible(true);
                     dispose();
@@ -144,7 +144,8 @@ public class VentanaLogin extends JFrame {
                 if (c == null) {
                     mostrarErrorCredenciales();
                 } else {
-                    VentanaCliente vc = new VentanaCliente();
+                	IServicioEventos servicioEventos = new ServicioEventosCSV(); // Todos los eventos
+                    VentanaCliente vc = new VentanaCliente(c, servicioEventos);
                     vc.setLocationRelativeTo(this);
                     vc.setVisible(true);
                     dispose();

@@ -3,6 +3,7 @@ package InterfazGrafica;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -16,6 +17,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.JOptionPane;
 
+import Boletamaster.*;
+
 public class VentanaCliente extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -24,7 +27,16 @@ public class VentanaCliente extends JFrame {
     private JTable tablaEventosDisponibles;
     private JTable tablaMisTiquetes;
 
-    public VentanaCliente() {
+    private DefaultTableModel modeloEventos;
+    private DefaultTableModel modeloTiquetes;
+
+    private Cliente cliente;
+    private IServicioEventos servicioEventos;
+
+    public VentanaCliente(Cliente cliente, IServicioEventos servicioEventos) {
+        this.cliente = cliente;
+        this.servicioEventos = servicioEventos;
+
         setTitle("Boletamaster - Cliente");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -43,11 +55,11 @@ public class VentanaCliente extends JFrame {
         panelHeader.setLayout(new BorderLayout());
         contentPane.add(panelHeader, BorderLayout.NORTH);
 
-        JLabel lblTitulo = new JLabel("Portal de cliente");
+        JLabel lblTitulo = new JLabel("Portal de cliente (" + cliente.getLogin() + ")");
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         panelHeader.add(lblTitulo, BorderLayout.WEST);
 
-        JLabel lblSubtitulo = new JLabel("Consulta eventos y gestiona tus tiquetes");
+        JLabel lblSubtitulo = new JLabel("Saldo actual: $" + (int) cliente.getSaldo());
         lblSubtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblSubtitulo.setForeground(new Color(100, 100, 100));
         panelHeader.add(lblSubtitulo, BorderLayout.SOUTH);
@@ -82,7 +94,7 @@ public class VentanaCliente extends JFrame {
         panelEventos.add(panelEventosHeader, BorderLayout.NORTH);
 
         String[] columnasEventos = { "ID", "Nombre", "Fecha", "Ciudad", "Estado" };
-        DefaultTableModel modeloEventos = new DefaultTableModel(columnasEventos, 0);
+        modeloEventos = new DefaultTableModel(columnasEventos, 0);
         tablaEventosDisponibles = new JTable(modeloEventos);
         tablaEventosDisponibles.setFillsViewportHeight(true);
         JScrollPane scrollEventos = new JScrollPane(tablaEventosDisponibles);
@@ -123,7 +135,7 @@ public class VentanaCliente extends JFrame {
         panelMisTiquetes.add(panelMisTiqHeader, BorderLayout.NORTH);
 
         String[] columnasTiquetes = { "ID", "Evento", "Fecha", "Localidad", "Estado" };
-        DefaultTableModel modeloTiquetes = new DefaultTableModel(columnasTiquetes, 0);
+        modeloTiquetes = new DefaultTableModel(columnasTiquetes, 0);
         tablaMisTiquetes = new JTable(modeloTiquetes);
         tablaMisTiquetes.setFillsViewportHeight(true);
         JScrollPane scrollTiquetes = new JScrollPane(tablaMisTiquetes);
@@ -147,7 +159,7 @@ public class VentanaCliente extends JFrame {
         panelMisTiqBotones.add(btnCancelarTiq);
         panelMisTiqBotones.add(btnRefrescarTiq);
 
-        // ================== PESTAÑA: PERFIL (OPCIONAL / BASE) ==================
+        // ================== PESTAÑA: PERFIL (BASE) ==================
         JPanel panelPerfil = new JPanel(new BorderLayout(10, 10));
         panelPerfil.setBorder(new EmptyBorder(10, 10, 10, 10));
         tabbedPane.addTab("Mi perfil", null, panelPerfil, "Datos básicos del cliente");
@@ -173,7 +185,14 @@ public class VentanaCliente extends JFrame {
         lblPerfilPlaceholder.setForeground(new Color(80, 80, 80));
         panelPerfilCentro.add(lblPerfilPlaceholder);
 
-        // ================== ACCIONES BÁSICAS (Placeholders) ==================
+        // ================== CARGA INICIAL ==================
+        cargarEventosDisponibles();
+        cargarMisTiquetes();
+
+        // ================== ACCIONES ==================
+
+        btnRefrescarEventos.addActionListener(e -> cargarEventosDisponibles());
+        btnRefrescarTiq.addActionListener(e -> cargarMisTiquetes());
 
         btnVerDetalleEvento.addActionListener(e -> {
             int fila = tablaEventosDisponibles.getSelectedRow();
@@ -184,7 +203,8 @@ public class VentanaCliente extends JFrame {
                         JOptionPane.WARNING_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Aquí mostraríamos el detalle del evento con ID: " + tablaEventosDisponibles.getValueAt(fila, 0),
+                        "Aquí mostraríamos el detalle del evento con ID: " +
+                                tablaEventosDisponibles.getValueAt(fila, 0),
                         "Detalle de evento",
                         JOptionPane.INFORMATION_MESSAGE);
             }
@@ -199,7 +219,8 @@ public class VentanaCliente extends JFrame {
                         JOptionPane.WARNING_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Aquí iniciaría el flujo de compra para el evento con ID: " + tablaEventosDisponibles.getValueAt(fila, 0),
+                        "Aquí iniciaría el flujo de compra para el evento con ID: " +
+                                tablaEventosDisponibles.getValueAt(fila, 0),
                         "Comprar tiquete",
                         JOptionPane.INFORMATION_MESSAGE);
             }
@@ -214,7 +235,8 @@ public class VentanaCliente extends JFrame {
                         JOptionPane.WARNING_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Aquí mostraríamos el detalle del tiquete con ID: " + tablaMisTiquetes.getValueAt(fila, 0),
+                        "Aquí mostraríamos el detalle del tiquete con ID: " +
+                                tablaMisTiquetes.getValueAt(fila, 0),
                         "Detalle de tiquete",
                         JOptionPane.INFORMATION_MESSAGE);
             }
@@ -234,5 +256,64 @@ public class VentanaCliente extends JFrame {
                         JOptionPane.INFORMATION_MESSAGE);
             }
         });
+    }
+
+    // ======== MÉTODOS DE CARGA ========
+
+    private void cargarEventosDisponibles() {
+        modeloEventos.setRowCount(0);
+
+        List<Evento> eventos;
+        if (servicioEventos != null) {
+            eventos = servicioEventos.listarEventos();
+        } else {
+            eventos = Main.eventos; // fallback
+        }
+
+        for (Evento ev : eventos) {
+            String ciudad = "-";
+            if (ev.getVenue() != null) {
+                ciudad = ev.getVenue().getUbicacion(); // o getNombre()
+            }
+            Object[] fila = {
+                    ev.getId(),
+                    ev.getNombre(),
+                    ev.getFecha(),
+                    ciudad,
+                    ev.getEstado()
+            };
+            modeloEventos.addRow(fila);
+        }
+    }
+
+    private void cargarMisTiquetes() {
+        modeloTiquetes.setRowCount(0);
+
+        if (cliente == null) return;
+
+        for (Tiquete t : cliente.getTiquetes()) {
+            String eventoNombre = "-";
+            String fecha = "-";
+            String nomLoc = "-";
+
+            if (t.getLocalidad() != null) {
+                Localidad l = t.getLocalidad();
+                nomLoc = l.getNombre();
+                if (l.getEvento() != null) {
+                    Evento ev = l.getEvento();
+                    eventoNombre = ev.getNombre();
+                    fecha = ev.getFecha() != null ? ev.getFecha().toString() : "-";
+                }
+            }
+
+            Object[] fila = {
+                    t.getId(),
+                    eventoNombre,
+                    fecha,
+                    nomLoc,
+                    t.getEstado()
+            };
+            modeloTiquetes.addRow(fila);
+        }
     }
 }

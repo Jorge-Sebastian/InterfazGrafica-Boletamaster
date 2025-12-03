@@ -10,7 +10,7 @@ public class Main {
     // Base de datos
     static Administrador admin;
     static ArrayList<Usuario> usuarios = new ArrayList<>();
-    static ArrayList<Evento> eventos = new ArrayList<>();
+    public static ArrayList<Evento> eventos = new ArrayList<>();
     static ArrayList<Localidad> localidades = new ArrayList<>();
     static ArrayList<Tiquete> inventario = new ArrayList<>();
     static ArrayList<Pago> pagos = new ArrayList<>();         
