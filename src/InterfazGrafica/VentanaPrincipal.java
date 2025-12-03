@@ -147,22 +147,21 @@ public class VentanaPrincipal extends JFrame {
 		// ========== CONEXIÓN DE BOTONES CON VENTANAS ==========
 
 		btnAdmin.addActionListener(e -> {
-			VentanaAdmin v = new VentanaAdmin();
-			v.setLocationRelativeTo(this);
-			v.setVisible(true);
+		    VentanaLogin v = new VentanaLogin("ADMIN");
+		    v.setLocationRelativeTo(this);
+		    v.setVisible(true);
 		});
 
 		btnOrganizador.addActionListener(e -> {
-			IServicioEventos servicioEventos = new ServicioEventosCSV();
-		    VentanaOrganizador v = new VentanaOrganizador(servicioEventos);
+		    VentanaLogin v = new VentanaLogin("ORGANIZADOR");
 		    v.setLocationRelativeTo(this);
 		    v.setVisible(true);
 		});
 
 		btnCliente.addActionListener(e -> {
-			VentanaCliente v = new VentanaCliente();
-			v.setLocationRelativeTo(this);
-			v.setVisible(true);
+		    VentanaLogin v = new VentanaLogin("CLIENTE");
+		    v.setLocationRelativeTo(this);
+		    v.setVisible(true);
 		});
 	}
 }
