@@ -1,2 +1,3 @@
 id,nombre,tipo,estado,fechaISO,horaISO,venueId
 E1,Concierto 1,MUSICAL,PROGRAMADO,2025-12-07,19:00,V1
+E2,Concierto 2,MUSICAL CLASICO,PROGRAMADO,2025-12-17,09:00,V1

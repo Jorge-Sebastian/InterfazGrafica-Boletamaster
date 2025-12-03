@@ -1,5 +1,7 @@
 package InterfazGrafica;
 
+import Boletamaster.*;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
@@ -13,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.swing.SwingConstants;
 
 public class VentanaPrincipal extends JFrame {
 
@@ -20,25 +23,31 @@ public class VentanaPrincipal extends JFrame {
 	private JPanel contentPane;
 
 	public static void main(String[] args) {
-		// Look & Feel del sistema
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-				| UnsupportedLookAndFeelException e) {
-			e.printStackTrace();
-		}
+	    // Look & Feel del sistema
+	    try {
+	        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+	    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+	            | UnsupportedLookAndFeelException e) {
+	        e.printStackTrace();
+	    }
 
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					VentanaPrincipal frame = new VentanaPrincipal();
-					frame.setLocationRelativeTo(null); // centrar
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+	    // 🔹 Cargar datos del backend antes de abrir la interfaz
+	    DataStore ds = new DataStore();
+	    ds.loadAll();  // Esto llena Main.usuarios, Main.eventos, etc. desde los CSV
+	    
+	    //System.out.println("Eventos cargados en meoria " + Main.eventos.size());
+
+	    EventQueue.invokeLater(new Runnable() {
+	        public void run() {
+	            try {
+	                VentanaPrincipal frame = new VentanaPrincipal();
+	                frame.setLocationRelativeTo(null); // centrar
+	                frame.setVisible(true);
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    });
 	}
 
 	public VentanaPrincipal() {
@@ -62,7 +71,7 @@ public class VentanaPrincipal extends JFrame {
 
 		JLabel lblTitulo = new JLabel("Boletamaster");
 		lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 26));
-		panelHeader.add(lblTitulo, BorderLayout.WEST);
+		panelHeader.add(lblTitulo, BorderLayout.CENTER);
 
 		JLabel lblSubtitulo = new JLabel("Gestión de eventos y tiquetes");
 		lblSubtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -82,14 +91,16 @@ public class VentanaPrincipal extends JFrame {
 		panelCentro.add(panelCard, BorderLayout.CENTER);
 
 		JLabel lblElige = new JLabel("Elige cómo quieres ingresar");
+		lblElige.setHorizontalAlignment(SwingConstants.CENTER);
 		lblElige.setFont(new Font("Segoe UI", Font.BOLD, 20));
-		lblElige.setBounds(40, 20, 400, 30);
+		lblElige.setBounds(10, 10, 846, 30);
 		panelCard.add(lblElige);
 
 		JLabel lblAyuda = new JLabel("Selecciona el tipo de usuario para continuar");
+		lblAyuda.setHorizontalAlignment(SwingConstants.CENTER);
 		lblAyuda.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 		lblAyuda.setForeground(new Color(120, 120, 120));
-		lblAyuda.setBounds(40, 55, 350, 20);
+		lblAyuda.setBounds(10, 53, 846, 20);
 		panelCard.add(lblAyuda);
 
 		// Botón Administrador
@@ -99,7 +110,7 @@ public class VentanaPrincipal extends JFrame {
 		btnAdmin.setForeground(new Color(0, 0, 0));
 		btnAdmin.setFocusPainted(false);
 		btnAdmin.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-		btnAdmin.setBounds(40, 100, 220, 40);
+		btnAdmin.setBounds(317, 95, 220, 40);
 		panelCard.add(btnAdmin);
 
 		// Botón Organizador
@@ -109,7 +120,7 @@ public class VentanaPrincipal extends JFrame {
 		btnOrganizador.setForeground(new Color(0, 0, 0));
 		btnOrganizador.setFocusPainted(false);
 		btnOrganizador.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-		btnOrganizador.setBounds(40, 155, 220, 40);
+		btnOrganizador.setBounds(317, 145, 220, 40);
 		panelCard.add(btnOrganizador);
 
 		// Botón Cliente
@@ -119,7 +130,7 @@ public class VentanaPrincipal extends JFrame {
 		btnCliente.setForeground(new Color(33, 33, 33));
 		btnCliente.setFocusPainted(false);
 		btnCliente.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-		btnCliente.setBounds(40, 210, 220, 40);
+		btnCliente.setBounds(317, 195, 220, 40);
 		panelCard.add(btnCliente);
 
 		// ========== FOOTER ==========
@@ -142,9 +153,10 @@ public class VentanaPrincipal extends JFrame {
 		});
 
 		btnOrganizador.addActionListener(e -> {
-			VentanaOrganizador v = new VentanaOrganizador();
-			v.setLocationRelativeTo(this);
-			v.setVisible(true);
+			IServicioEventos servicioEventos = new ServicioEventosCSV();
+		    VentanaOrganizador v = new VentanaOrganizador(servicioEventos);
+		    v.setLocationRelativeTo(this);
+		    v.setVisible(true);
 		});
 
 		btnCliente.addActionListener(e -> {

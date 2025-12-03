@@ -1,5 +1,9 @@
 package InterfazGrafica;
 
+import java.util.*;
+
+import Boletamaster.*;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -25,8 +29,42 @@ public class VentanaOrganizador extends JFrame {
     private JTable tablaEventos;
     private JTable tablaLocalidades;
     private JTable tablaTiquetes;
+    
+    private DefaultTableModel modeloEventos;
+    private IServicioEventos servicioEventos;
+    
+    //---------CARGAR EVENTOS-----------------
+    private void cargarEventosEnTabla() {
+        modeloEventos.setRowCount(0); // limpiar
 
-    public VentanaOrganizador() {
+        if (servicioEventos == null) {
+            return;
+        }
+
+        List<Evento> eventos = servicioEventos.listarEventos();
+
+        for (Evento ev : eventos) {
+            String ciudad = "-";
+            if (ev.getVenue() != null) {
+                // En Venue tienes nombre, ubicación, etc.
+                // Si quieres la ciudad/ubicación:
+                ciudad = ev.getVenue().getUbicacion();  // o getNombre(), según prefieras
+            }
+
+            Object[] fila = {
+                ev.getId(),
+                ev.getNombre(),
+                ev.getFecha(),   // LocalDate: la tabla muestra toString()
+                ciudad,
+                ev.getEstado()
+            };
+            modeloEventos.addRow(fila);
+        }
+    }
+
+
+    public VentanaOrganizador(IServicioEventos servicioEventos) {
+    	this.servicioEventos = servicioEventos;
         setTitle("Boletamaster - Organizador");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -63,7 +101,7 @@ public class VentanaOrganizador extends JFrame {
         JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
         panelCentro.add(tabbedPane, BorderLayout.CENTER);
 
-        // ================== PESTAÑA: EVENTOS ==================
+     // ================== PESTAÑA: EVENTOS ==================
         JPanel panelEventos = new JPanel();
         panelEventos.setLayout(new BorderLayout(10, 10));
         panelEventos.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -82,12 +120,12 @@ public class VentanaOrganizador extends JFrame {
         panelEventosHeader.add(lblEventosDesc, BorderLayout.SOUTH);
         panelEventos.add(panelEventosHeader, BorderLayout.NORTH);
 
-        // Tabla de eventos
+        // ✅ OJO AQUÍ: usamos el atributo, no una variable local
         String[] columnasEventos = { "ID", "Nombre", "Fecha", "Ciudad", "Estado" };
-        DefaultTableModel modeloEventos = new DefaultTableModel(columnasEventos, 0);
+        modeloEventos = new DefaultTableModel(columnasEventos, 0);   // <--- SIN "DefaultTableModel" adelante
         tablaEventos = new JTable(modeloEventos);
         tablaEventos.setFillsViewportHeight(true);
-       	JScrollPane scrollEventos = new JScrollPane(tablaEventos);
+        JScrollPane scrollEventos = new JScrollPane(tablaEventos);
         scrollEventos.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         panelEventos.add(scrollEventos, BorderLayout.CENTER);
 
@@ -112,6 +150,7 @@ public class VentanaOrganizador extends JFrame {
         panelEventosBotones.add(btnEditarEvento);
         panelEventosBotones.add(btnEliminarEvento);
         panelEventosBotones.add(btnRefrescarEventos);
+
 
         // ================== PESTAÑA: LOCALIDADES ==================
         JPanel panelLocalidades = new JPanel();
@@ -239,5 +278,14 @@ public class VentanaOrganizador extends JFrame {
                 }
             }
         });
+        
+     // Cargar eventos al abrir la ventana
+        cargarEventosEnTabla();
+
+        // Acción del botón Refrescar
+        btnRefrescarEventos.addActionListener(e -> {
+            cargarEventosEnTabla();
+        });
+
     }
 }
