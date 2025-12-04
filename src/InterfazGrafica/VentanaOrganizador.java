@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -23,15 +21,18 @@ import javax.swing.table.DefaultTableModel;
 import Boletamaster.Administrador;
 import Boletamaster.DataStore;
 import Boletamaster.Evento;
-import Boletamaster.IServicioEventos;
 import Boletamaster.Localidad;
 import Boletamaster.Main;
 import Boletamaster.Organizador;
+import Boletamaster.ServicioEventosCSV;
 import Boletamaster.Tiquete;
 import Boletamaster.TiqueteNumerado;
 import Boletamaster.TiqueteSimple;
+import Boletamaster.IServicioEventos;
+import Boletamaster.Cliente;
 import Boletamaster.Usuario;
-import Boletamaster.Venue;
+
+import java.util.List;
 
 public class VentanaOrganizador extends JFrame {
 
@@ -46,14 +47,35 @@ public class VentanaOrganizador extends JFrame {
     private DefaultTableModel modeloLocalidades;
     private DefaultTableModel modeloTiquetes;
 
-    private Organizador organizador;
     private IServicioEventos servicioEventos;
+    private Organizador organizador;
 
-    public VentanaOrganizador(Organizador organizador, IServicioEventos servicioEventos) {
+    // ================== CONSTRUCTORES ==================
+
+    /** Constructor usado cuando ya tenemos el organizador logueado */
+    public VentanaOrganizador(Organizador organizador) {
         this.organizador = organizador;
-        this.servicioEventos = servicioEventos;
+        this.servicioEventos = new ServicioEventosCSV(organizador);
+        initUI();
+        cargarEventosEnTabla();
+        cargarLocalidadesEnTabla();
+        cargarTiquetesEnTabla();
+    }
 
-        setTitle("Boletamaster - Organizador (" + organizador.getLogin() + ")");
+    /** Constructor de compatibilidad (si lo llamas sin login solo podrás ver datos) */
+    public VentanaOrganizador(IServicioEventos servicioEventos) {
+        this.servicioEventos = servicioEventos;
+        this.organizador = null; // sin organizador, solo lectura
+        initUI();
+        cargarEventosEnTabla();
+        cargarLocalidadesEnTabla();
+        cargarTiquetesEnTabla();
+    }
+
+    // ================== UI ==================
+
+    private void initUI() {
+        setTitle("Boletamaster - Organizador");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);
         setBounds(100, 100, 900, 550);
@@ -64,10 +86,11 @@ public class VentanaOrganizador extends JFrame {
         contentPane.setLayout(new BorderLayout(10, 10));
         setContentPane(contentPane);
 
-        // ========== HEADER ==========
-        JPanel panelHeader = new JPanel(new BorderLayout());
+        // ---------- HEADER ----------
+        JPanel panelHeader = new JPanel();
         panelHeader.setBackground(Color.WHITE);
         panelHeader.setBorder(new EmptyBorder(10, 20, 10, 20));
+        panelHeader.setLayout(new BorderLayout());
         contentPane.add(panelHeader, BorderLayout.NORTH);
 
         JLabel lblTitulo = new JLabel("Panel de organizador");
@@ -79,34 +102,32 @@ public class VentanaOrganizador extends JFrame {
         lblSubtitulo.setForeground(new Color(100, 100, 100));
         panelHeader.add(lblSubtitulo, BorderLayout.SOUTH);
 
-        JButton btnVerGanancias = new JButton("Ver mis ganancias");
+        JButton btnVerGanancias = new JButton("Ver ganancias");
         btnVerGanancias.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         panelHeader.add(btnVerGanancias, BorderLayout.EAST);
 
-        // ========== CENTRO: TABS ==========
-        JPanel panelCentro = new JPanel(new BorderLayout());
+        // ---------- CENTRO ----------
+        JPanel panelCentro = new JPanel();
         panelCentro.setOpaque(false);
+        panelCentro.setLayout(new BorderLayout());
         contentPane.add(panelCentro, BorderLayout.CENTER);
 
         JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
         panelCentro.add(tabbedPane, BorderLayout.CENTER);
 
-        Font fontTituloTab = new Font("Segoe UI", Font.BOLD, 16);
-        Font fontDescTab = new Font("Segoe UI", Font.PLAIN, 12);
-        Font fontBoton = new Font("Segoe UI", Font.PLAIN, 13);
-
-        // ================== TAB EVENTOS ==================
+        // ================== PESTAÑA EVENTOS ==================
         JPanel panelEventos = new JPanel(new BorderLayout(10, 10));
         panelEventos.setBorder(new EmptyBorder(10, 10, 10, 10));
         tabbedPane.addTab("Eventos", null, panelEventos, "Gestión de eventos");
 
+        JLabel lblEventosTitulo = new JLabel("Eventos");
+        lblEventosTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        JLabel lblEventosDesc = new JLabel("Administra los eventos disponibles para la venta de tiquetes.");
+        lblEventosDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblEventosDesc.setForeground(new Color(100, 100, 100));
+
         JPanel panelEventosHeader = new JPanel(new BorderLayout());
         panelEventosHeader.setOpaque(false);
-        JLabel lblEventosTitulo = new JLabel("Eventos");
-        lblEventosTitulo.setFont(fontTituloTab);
-        JLabel lblEventosDesc = new JLabel("Administra los eventos disponibles para la venta de tiquetes.");
-        lblEventosDesc.setFont(fontDescTab);
-        lblEventosDesc.setForeground(new Color(100, 100, 100));
         panelEventosHeader.add(lblEventosTitulo, BorderLayout.NORTH);
         panelEventosHeader.add(lblEventosDesc, BorderLayout.SOUTH);
         panelEventos.add(panelEventosHeader, BorderLayout.NORTH);
@@ -125,10 +146,11 @@ public class VentanaOrganizador extends JFrame {
         panelEventos.add(panelEventosBotones, BorderLayout.SOUTH);
 
         JButton btnNuevoEvento = new JButton("Nuevo evento");
-        JButton btnEditarEvento = new JButton("Editar (no implementado)");
-        JButton btnEliminarEvento = new JButton("Cancelar (Admin)");
+        JButton btnEditarEvento = new JButton("Editar");
+        JButton btnEliminarEvento = new JButton("Eliminar");
         JButton btnRefrescarEventos = new JButton("Refrescar");
 
+        Font fontBoton = new Font("Segoe UI", Font.PLAIN, 13);
         btnNuevoEvento.setFont(fontBoton);
         btnEditarEvento.setFont(fontBoton);
         btnEliminarEvento.setFont(fontBoton);
@@ -139,23 +161,24 @@ public class VentanaOrganizador extends JFrame {
         panelEventosBotones.add(btnEliminarEvento);
         panelEventosBotones.add(btnRefrescarEventos);
 
-        // ================== TAB LOCALIDADES ==================
+        // ================== PESTAÑA LOCALIDADES ==================
         JPanel panelLocalidades = new JPanel(new BorderLayout(10, 10));
         panelLocalidades.setBorder(new EmptyBorder(10, 10, 10, 10));
         tabbedPane.addTab("Localidades", null, panelLocalidades, "Localidades por evento");
 
+        JLabel lblLocTitulo = new JLabel("Localidades");
+        lblLocTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        JLabel lblLocDesc = new JLabel("Configura localidades, precios, capacidad y ofertas para cada evento.");
+        lblLocDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblLocDesc.setForeground(new Color(100, 100, 100));
+
         JPanel panelLocHeader = new JPanel(new BorderLayout());
         panelLocHeader.setOpaque(false);
-        JLabel lblLocTitulo = new JLabel("Localidades");
-        lblLocTitulo.setFont(fontTituloTab);
-        JLabel lblLocDesc = new JLabel("Configura las localidades, precios y capacidad para cada evento.");
-        lblLocDesc.setFont(fontDescTab);
-        lblLocDesc.setForeground(new Color(100, 100, 100));
         panelLocHeader.add(lblLocTitulo, BorderLayout.NORTH);
         panelLocHeader.add(lblLocDesc, BorderLayout.SOUTH);
         panelLocalidades.add(panelLocHeader, BorderLayout.NORTH);
 
-        String[] columnasLocalidades = { "ID", "Evento", "Nombre", "Capacidad", "Precio vigente" };
+        String[] columnasLocalidades = { "ID", "Evento", "Nombre localidad", "Capacidad", "Vendidos", "Precio vigente" };
         modeloLocalidades = new DefaultTableModel(columnasLocalidades, 0);
         tablaLocalidades = new JTable(modeloLocalidades);
         tablaLocalidades.setFillsViewportHeight(true);
@@ -169,38 +192,45 @@ public class VentanaOrganizador extends JFrame {
         panelLocalidades.add(panelLocBotones, BorderLayout.SOUTH);
 
         JButton btnNuevaLoc = new JButton("Nueva localidad");
-        JButton btnEditarLoc = new JButton("Editar (no implementado)");
+        JButton btnEditarLoc = new JButton("Editar");
+        JButton btnEliminarLoc = new JButton("Eliminar");
         JButton btnCrearOferta = new JButton("Crear oferta");
+        JButton btnCrearTiq = new JButton("Crear tiquete");
         JButton btnRefrescarLoc = new JButton("Refrescar");
 
         btnNuevaLoc.setFont(fontBoton);
         btnEditarLoc.setFont(fontBoton);
+        btnEliminarLoc.setFont(fontBoton);
         btnCrearOferta.setFont(fontBoton);
+        btnCrearTiq.setFont(fontBoton);
         btnRefrescarLoc.setFont(fontBoton);
 
         panelLocBotones.add(btnNuevaLoc);
         panelLocBotones.add(btnEditarLoc);
+        panelLocBotones.add(btnEliminarLoc);
         panelLocBotones.add(btnCrearOferta);
+        panelLocBotones.add(btnCrearTiq);
         panelLocBotones.add(btnRefrescarLoc);
 
-        // ================== TAB TIQUETES ==================
+        // ================== PESTAÑA TIQUETES ==================
         JPanel panelTiquetes = new JPanel(new BorderLayout(10, 10));
         panelTiquetes.setBorder(new EmptyBorder(10, 10, 10, 10));
-        tabbedPane.addTab("Tiquetes", null, panelTiquetes, "Control de tiquetes generados");
+        tabbedPane.addTab("Tiquetes", null, panelTiquetes, "Control de tiquetes");
+
+        JLabel lblTiqTitulo = new JLabel("Tiquetes");
+        lblTiqTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        JLabel lblTiqDesc = new JLabel("Consulta los tiquetes generados y su estado.");
+        lblTiqDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTiqDesc.setForeground(new Color(100, 100, 100));
 
         JPanel panelTiqHeader = new JPanel(new BorderLayout());
         panelTiqHeader.setOpaque(false);
-        JLabel lblTiqTitulo = new JLabel("Tiquetes");
-        lblTiqTitulo.setFont(fontTituloTab);
-        JLabel lblTiqDesc = new JLabel("Consulta los tiquetes generados y su estado.");
-        lblTiqDesc.setFont(fontDescTab);
-        lblTiqDesc.setForeground(new Color(100, 100, 100));
         panelTiqHeader.add(lblTiqTitulo, BorderLayout.NORTH);
         panelTiqHeader.add(lblTiqDesc, BorderLayout.SOUTH);
         panelTiquetes.add(panelTiqHeader, BorderLayout.NORTH);
 
-        String[] columnasTiq = { "ID", "Evento", "Cliente", "Localidad", "Asiento", "Estado" };
-        modeloTiquetes = new DefaultTableModel(columnasTiq, 0);
+        String[] columnasTiquetes = { "ID", "Evento", "Cliente", "Localidad", "Estado" };
+        modeloTiquetes = new DefaultTableModel(columnasTiquetes, 0);
         tablaTiquetes = new JTable(modeloTiquetes);
         tablaTiquetes.setFillsViewportHeight(true);
         JScrollPane scrollTiquetes = new JScrollPane(tablaTiquetes);
@@ -212,85 +242,46 @@ public class VentanaOrganizador extends JFrame {
         panelTiqBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelTiquetes.add(panelTiqBotones, BorderLayout.SOUTH);
 
-        JButton btnNuevoTiq = new JButton("Nuevo tiquete");
         JButton btnVerDetalleTiq = new JButton("Ver detalle");
         JButton btnRefrescarTiq = new JButton("Refrescar");
-
-        btnNuevoTiq.setFont(fontBoton);
         btnVerDetalleTiq.setFont(fontBoton);
         btnRefrescarTiq.setFont(fontBoton);
 
-        panelTiqBotones.add(btnNuevoTiq);
         panelTiqBotones.add(btnVerDetalleTiq);
         panelTiqBotones.add(btnRefrescarTiq);
 
-        // ========== CARGA INICIAL ==========
-        cargarEventosEnTabla();
-        cargarLocalidadesEnTabla();
-        cargarTiquetesEnTabla();
+        // ================== ACCIONES ==================
 
-        // ========== ACCIONES ==========
-
+        // --- Eventos ---
         btnRefrescarEventos.addActionListener(e -> cargarEventosEnTabla());
-        btnRefrescarLoc.addActionListener(e -> cargarLocalidadesEnTabla());
-        btnRefrescarTiq.addActionListener(e -> cargarTiquetesEnTabla());
-
         btnNuevoEvento.addActionListener(e -> crearEventoGUI());
+        btnEditarEvento.addActionListener(e -> editarEventoGUI());
+        btnEliminarEvento.addActionListener(e -> eliminarEventoGUI());
+
+        // --- Localidades ---
+        btnRefrescarLoc.addActionListener(e -> cargarLocalidadesEnTabla());
         btnNuevaLoc.addActionListener(e -> crearLocalidadGUI());
         btnCrearOferta.addActionListener(e -> crearOfertaGUI());
-        btnNuevoTiq.addActionListener(e -> crearTiqueteGUI());
+        btnCrearTiq.addActionListener(e -> crearTiqueteGUI());
+        // (Editar / Eliminar localidad: opcionales para el proyecto, se pueden dejar para después)
 
-        btnEditarEvento.addActionListener(e ->
-                JOptionPane.showMessageDialog(this,
-                        "La edición de eventos aún no está implementada.",
-                        "Info",
-                        JOptionPane.INFORMATION_MESSAGE));
+        // --- Tiquetes ---
+        btnRefrescarTiq.addActionListener(e -> cargarTiquetesEnTabla());
+        btnVerDetalleTiq.addActionListener(e -> verDetalleTiqueteGUI());
 
-        btnEliminarEvento.addActionListener(e ->
-                JOptionPane.showMessageDialog(this,
-                        "La cancelación de eventos con reembolso la hace el ADMIN.",
-                        "Información",
-                        JOptionPane.INFORMATION_MESSAGE));
-
-        btnEditarLoc.addActionListener(e ->
-                JOptionPane.showMessageDialog(this,
-                        "La edición de localidades aún no está implementada.",
-                        "Info",
-                        JOptionPane.INFORMATION_MESSAGE));
-
-        btnVerDetalleTiq.addActionListener(e -> {
-            int fila = tablaTiquetes.getSelectedRow();
-            if (fila == -1) {
-                JOptionPane.showMessageDialog(this,
-                        "Selecciona un tiquete para ver el detalle.",
-                        "Sin selección",
-                        JOptionPane.WARNING_MESSAGE);
-            } else {
-                String id = (String) tablaTiquetes.getValueAt(fila, 0);
-                JOptionPane.showMessageDialog(this,
-                        "Aquí podríamos mostrar un detalle más completo del tiquete ID: " + id,
-                        "Detalle de tiquete",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-
-        btnVerGanancias.addActionListener(e -> {
-            Object g = organizador.verGanancias(); // puede ser double o String
-            JOptionPane.showMessageDialog(this,
-                    "Tus ganancias: " + g,
-                    "Ganancias",
-                    JOptionPane.INFORMATION_MESSAGE);
-        });
+        // --- Ganancias ---
+        btnVerGanancias.addActionListener(e -> verGananciasGUI());
     }
 
     // ================== CARGA DE TABLAS ==================
 
     private void cargarEventosEnTabla() {
         modeloEventos.setRowCount(0);
+        if (servicioEventos == null) {
+            servicioEventos = new ServicioEventosCSV(organizador);
+        }
 
-        if (servicioEventos == null) return;
         List<Evento> eventos = servicioEventos.listarEventos();
-
         for (Evento ev : eventos) {
             String ciudad = "-";
             if (ev.getVenue() != null) {
@@ -309,18 +300,16 @@ public class VentanaOrganizador extends JFrame {
 
     private void cargarLocalidadesEnTabla() {
         modeloLocalidades.setRowCount(0);
-
         for (Localidad l : Main.localidades) {
-            String evNombre = "-";
-            if (l.getEvento() != null) {
-                evNombre = l.getEvento().getNombre();
-            }
+            Evento e = l.getEvento();
+            String nomEv = (e != null) ? e.getNombre() : "-";
             Object[] fila = {
                     l.getId(),
-                    evNombre,
+                    nomEv,
                     l.getNombre(),
                     l.getAforo(),
-                    (int) l.getPrecioVigente()
+                    l.getVendidos(),
+                    l.getPrecioVigente()
             };
             modeloLocalidades.addRow(fila);
         }
@@ -328,119 +317,160 @@ public class VentanaOrganizador extends JFrame {
 
     private void cargarTiquetesEnTabla() {
         modeloTiquetes.setRowCount(0);
-
         for (Tiquete t : Main.inventario) {
-            String evNombre = "-";
-            String locNombre = "-";
-            String asiento = "-";
-            String clienteLogin = "-";
-
+            String ev = "-";
+            String loc = "-";
             if (t.getLocalidad() != null) {
-                Localidad l = t.getLocalidad();
-                locNombre = l.getNombre();
-                if (l.getEvento() != null) {
-                    evNombre = l.getEvento().getNombre();
+                loc = t.getLocalidad().getNombre();
+                if (t.getLocalidad().getEvento() != null) {
+                    ev = t.getLocalidad().getEvento().getNombre();
                 }
             }
-            if (t instanceof TiqueteNumerado) {
-                asiento = ((TiqueteNumerado) t).getAsiento();
-            }
-            if (t.getPropietario() != null) {
-                Usuario u = t.getPropietario();
-                clienteLogin = u.getLogin();
-            }
-
+            String cliente = (t.getPropietario() != null) ? t.getPropietario().getLogin() : "-";
             Object[] fila = {
                     t.getId(),
-                    evNombre,
-                    clienteLogin,
-                    locNombre,
-                    asiento,
+                    ev,
+                    cliente,
+                    loc,
                     t.getEstado()
             };
             modeloTiquetes.addRow(fila);
         }
     }
 
-    // ================== ACCIONES (equivalentes al menú de consola) ==================
+    // ================== OPERACIONES (EVENTOS) ==================
+
+    private boolean asegurarOrganizador() {
+        if (organizador == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Para esta operación debes estar autenticado como organizador.",
+                    "Operación no disponible",
+                    JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        return true;
+    }
 
     private void crearEventoGUI() {
-        String nombre = JOptionPane.showInputDialog(this,
-                "Nombre del evento:",
-                "Nuevo evento",
-                JOptionPane.PLAIN_MESSAGE);
-        if (nombre == null || nombre.trim().isEmpty()) return;
+        if (!asegurarOrganizador()) return;
 
-        String tipo = JOptionPane.showInputDialog(this,
-                "Tipo (MUSICAL/DEPORTIVO/...):",
-                "Nuevo evento",
-                JOptionPane.PLAIN_MESSAGE);
-        if (tipo == null || tipo.trim().isEmpty()) return;
+        String nombre = JOptionPane.showInputDialog(this, "Nombre del evento:");
+        if (nombre == null || nombre.isBlank()) return;
 
-        String fechaStr = JOptionPane.showInputDialog(this,
-                "Fecha (YYYY-MM-DD):",
-                "Nuevo evento",
-                JOptionPane.PLAIN_MESSAGE);
-        if (fechaStr == null || fechaStr.trim().isEmpty()) return;
+        String tipo = JOptionPane.showInputDialog(this, "Tipo (MUSICAL/DEPORTIVO/...):");
+        if (tipo == null || tipo.isBlank()) return;
 
-        String horaStr = JOptionPane.showInputDialog(this,
-                "Hora (HH:MM):",
-                "Nuevo evento",
-                JOptionPane.PLAIN_MESSAGE);
-        if (horaStr == null || horaStr.trim().isEmpty()) return;
+        String fechaStr = JOptionPane.showInputDialog(this, "Fecha (YYYY-MM-DD):");
+        String horaStr = JOptionPane.showInputDialog(this, "Hora (HH:MM):");
+        String ciudad = JOptionPane.showInputDialog(this, "Ciudad del venue:");
+        String nombreVenue = JOptionPane.showInputDialog(this, "Nombre del venue:");
+        String capacidadStr = JOptionPane.showInputDialog(this, "Capacidad del venue:");
 
-        LocalDate fecha;
-        LocalTime hora;
         try {
-            fecha = LocalDate.parse(fechaStr.trim());
-            hora = LocalTime.parse(horaStr.trim());
-        } catch (DateTimeParseException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Formato de fecha u hora inválido.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+            LocalDate fecha = LocalDate.parse(fechaStr.trim());
+            LocalTime hora = LocalTime.parse(horaStr.trim());
+            int capacidad = Integer.parseInt(capacidadStr.trim());
 
-        Venue v = new Venue("V" + System.currentTimeMillis(), "Venue-" + nombre, "Ciudad", 5000);
-        String idEvento = "E" + (Main.eventos.size() + 1);
+            String idVenue = "V" + System.currentTimeMillis();
+            Boletamaster.Venue v = new Boletamaster.Venue(idVenue, nombreVenue, ciudad, capacidad);
 
-        Evento e = organizador.crearEvento(idEvento, nombre.trim(), v, fecha, hora, tipo.trim());
-        if (e != null) {
+            String idEvento = "E" + (Main.eventos.size() + 1);
+            Evento e = organizador.crearEvento(idEvento, nombre, v, fecha, hora, tipo);
+            if (e == null) {
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo crear el evento. Puede que el venue ya esté reservado ese día.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             Main.eventos.add(e);
             guardarCambios();
             cargarEventosEnTabla();
-            JOptionPane.showMessageDialog(this,
-                    "Evento creado correctamente.",
-                    "Éxito",
+            JOptionPane.showMessageDialog(this, "Evento creado correctamente.", "Éxito",
                     JOptionPane.INFORMATION_MESSAGE);
-        } else {
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "No se pudo crear el evento (reglas del modelo).",
+                    "Datos inválidos: " + ex.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void crearLocalidadGUI() {
-        if (Main.eventos.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No hay eventos. Crea primero un evento.",
-                    "Sin eventos",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+    private void editarEventoGUI() {
+        // Para el proyecto no es estrictamente necesario.
+        JOptionPane.showMessageDialog(this,
+                "La edición de eventos se puede implementar luego.\nPor ahora solo creamos y listamos.",
+                "Info",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
 
+    private void eliminarEventoGUI() {
         int fila = tablaEventos.getSelectedRow();
         if (fila == -1) {
             JOptionPane.showMessageDialog(this,
-                    "Debes seleccionar un evento en la pestaña 'Eventos'.",
+                    "Debes seleccionar un evento para eliminarlo.",
+                    "Sin selección",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String id = (String) tablaEventos.getValueAt(fila, 0);
+
+        Evento encontrado = null;
+        for (Evento e : Main.eventos) {
+            if (e.getId().equals(id)) {
+                encontrado = e;
+                break;
+            }
+        }
+        if (encontrado == null) return;
+
+        int conf = JOptionPane.showConfirmDialog(this,
+                "¿Seguro que deseas eliminar el evento '" + encontrado.getNombre() + "'?",
+                "Confirmar",
+                JOptionPane.YES_NO_OPTION);
+        if (conf != JOptionPane.YES_OPTION) return;
+
+        Main.eventos.remove(encontrado);
+        guardarCambios();
+        cargarEventosEnTabla();
+    }
+
+    // ================== OPERACIONES (LOCALIDADES / OFERTAS / TIQUETES) ==================
+
+    private Evento buscarEventoPorId(String id) {
+        for (Evento e : Main.eventos) {
+            if (e.getId().equals(id)) return e;
+        }
+        return null;
+    }
+
+    private Localidad buscarLocalidadPorId(String id) {
+        for (Localidad l : Main.localidades) {
+            if (l.getId().equals(id)) return l;
+        }
+        return null;
+    }
+
+    private void crearLocalidadGUI() {
+        if (!asegurarOrganizador()) return;
+        if (Main.eventos.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No hay eventos. Crea primero un evento.",
+                    "Aviso",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        int filaEv = tablaEventos.getSelectedRow();
+        if (filaEv == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Selecciona primero un evento en la pestaña de Eventos.",
                     "Sin selección",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String idEvento = (String) tablaEventos.getValueAt(fila, 0);
+        String idEvento = (String) tablaEventos.getValueAt(filaEv, 0);
         Evento e = buscarEventoPorId(idEvento);
         if (e == null) {
             JOptionPane.showMessageDialog(this,
@@ -450,46 +480,20 @@ public class VentanaOrganizador extends JFrame {
             return;
         }
 
-        String nombreLoc = JOptionPane.showInputDialog(this,
-                "Nombre de la localidad:",
-                "Nueva localidad",
-                JOptionPane.PLAIN_MESSAGE);
-        if (nombreLoc == null || nombreLoc.trim().isEmpty()) return;
+        String nombreLoc = JOptionPane.showInputDialog(this, "Nombre de la localidad:");
+        if (nombreLoc == null || nombreLoc.isBlank()) return;
 
-        String precioStr = JOptionPane.showInputDialog(this,
-                "Precio base:",
-                "Nueva localidad",
-                JOptionPane.PLAIN_MESSAGE);
-        if (precioStr == null || precioStr.trim().isEmpty()) return;
+        String precioStr = JOptionPane.showInputDialog(this, "Precio base:");
+        String numeradaStr = JOptionPane.showInputDialog(this, "¿Numerada? (s/n):");
+        String aforoStr = JOptionPane.showInputDialog(this, "Aforo:");
 
-        String aforoStr = JOptionPane.showInputDialog(this,
-                "Aforo (capacidad):",
-                "Nueva localidad",
-                JOptionPane.PLAIN_MESSAGE);
-        if (aforoStr == null || aforoStr.trim().isEmpty()) return;
-
-        int opcionNum = JOptionPane.showConfirmDialog(this,
-                "¿Es numerada? (asientos individuales)",
-                "Nueva localidad",
-                JOptionPane.YES_NO_OPTION);
-        boolean numerada = (opcionNum == JOptionPane.YES_OPTION);
-
-        double precio;
-        int aforo;
         try {
-            precio = Double.parseDouble(precioStr.trim());
-            aforo = Integer.parseInt(aforoStr.trim());
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Precio o aforo inválidos.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+            double precio = Double.parseDouble(precioStr.trim());
+            boolean numerada = numeradaStr.trim().equalsIgnoreCase("s");
+            int aforo = Integer.parseInt(aforoStr.trim());
 
-        String idLoc = "L" + (Main.localidades.size() + 1);
-        Localidad l = organizador.crearLocalidad(e, idLoc, nombreLoc.trim(), precio, numerada, aforo);
-        if (l != null) {
+            String idLoc = "L" + (Main.localidades.size() + 1);
+            Localidad l = organizador.crearLocalidad(e, idLoc, nombreLoc, precio, numerada, aforo);
             Main.localidades.add(l);
             guardarCambios();
             cargarLocalidadesEnTabla();
@@ -497,27 +501,21 @@ public class VentanaOrganizador extends JFrame {
                     "Localidad creada correctamente.",
                     "Éxito",
                     JOptionPane.INFORMATION_MESSAGE);
-        } else {
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "No se pudo crear la localidad (reglas del modelo).",
+                    "Datos inválidos.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void crearOfertaGUI() {
-        if (Main.localidades.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No hay localidades. Crea primero una localidad.",
-                    "Sin localidades",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        if (!asegurarOrganizador()) return;
 
         int fila = tablaLocalidades.getSelectedRow();
         if (fila == -1) {
             JOptionPane.showMessageDialog(this,
-                    "Debes seleccionar una localidad en la pestaña 'Localidades'.",
+                    "Debes seleccionar una localidad para crear una oferta.",
                     "Sin selección",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -534,43 +532,37 @@ public class VentanaOrganizador extends JFrame {
         }
 
         String descStr = JOptionPane.showInputDialog(this,
-                "Descuento (0.0 a 1.0):",
-                "Crear oferta",
-                JOptionPane.PLAIN_MESSAGE);
-        if (descStr == null || descStr.trim().isEmpty()) return;
+                "Descuento (0.0 a 1.0, por ejemplo 0.10 para 10%):");
+        if (descStr == null) return;
 
-        double d;
         try {
-            d = Double.parseDouble(descStr.trim());
-        } catch (NumberFormatException ex) {
+            double d = Double.parseDouble(descStr.trim());
+            if (d < 0 || d > 1) throw new IllegalArgumentException();
+
+            String idOferta = "OF" + System.currentTimeMillis();
+            organizador.crearOferta(l, idOferta, d);
+            guardarCambios();
+            cargarLocalidadesEnTabla();
+
             JOptionPane.showMessageDialog(this,
-                    "Valor de descuento inválido.",
+                    "Oferta creada y aplicada a la localidad.",
+                    "Éxito",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Descuento inválido. Debe estar entre 0.0 y 1.0.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
-            return;
         }
-
-        organizador.crearOferta(l, "OF" + System.currentTimeMillis(), d);
-        guardarCambios();
-        JOptionPane.showMessageDialog(this,
-                "Oferta creada y asociada a la localidad.",
-                "Éxito",
-                JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void crearTiqueteGUI() {
-        if (Main.localidades.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No hay localidades. Crea primero una localidad.",
-                    "Sin localidades",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        if (!asegurarOrganizador()) return;
 
         int fila = tablaLocalidades.getSelectedRow();
         if (fila == -1) {
             JOptionPane.showMessageDialog(this,
-                    "Debes seleccionar una localidad en la pestaña 'Localidades'.",
+                    "Selecciona primero una localidad en la pestaña Localidades.",
                     "Sin selección",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -586,24 +578,23 @@ public class VentanaOrganizador extends JFrame {
             return;
         }
 
-        double precio = l.getPrecioVigente();
+        String numeradaStr = JOptionPane.showInputDialog(this, "¿Tiquete numerado? (s/n):");
+        if (numeradaStr == null) return;
+        boolean num = numeradaStr.trim().equalsIgnoreCase("s");
+
         String idTiq = "T" + (Main.inventario.size() + 1);
+        double precio = l.getPrecioVigente();
 
-        boolean numerada = l.isNumerada(); // asumiendo que tienes este método
-
-        Tiquete nuevo;
-        if (numerada) {
-            String asiento = JOptionPane.showInputDialog(this,
-                    "Asiento (ejemplo A1):",
-                    "Nuevo tiquete numerado",
-                    JOptionPane.PLAIN_MESSAGE);
-            if (asiento == null || asiento.trim().isEmpty()) return;
-            nuevo = new TiqueteNumerado(idTiq, precio, l, asiento.trim());
+        Tiquete t;
+        if (num) {
+            String asiento = JOptionPane.showInputDialog(this, "Asiento (ej: A1):");
+            if (asiento == null || asiento.isBlank()) return;
+            t = new TiqueteNumerado(idTiq, precio, l, asiento.trim());
         } else {
-            nuevo = new TiqueteSimple(idTiq, precio, l);
+            t = new TiqueteSimple(idTiq, precio, l);
         }
 
-        Main.inventario.add(nuevo);
+        Main.inventario.add(t);
         guardarCambios();
         cargarTiquetesEnTabla();
 
@@ -613,24 +604,66 @@ public class VentanaOrganizador extends JFrame {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
-    // ================== HELPERS BACKEND ==================
+    private void verDetalleTiqueteGUI() {
+        int fila = tablaTiquetes.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Selecciona un tiquete.",
+                    "Sin selección",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String id = (String) tablaTiquetes.getValueAt(fila, 0);
+        Tiquete encontrado = null;
+        for (Tiquete t : Main.inventario) {
+            if (t.getId().equals(id)) {
+                encontrado = t;
+                break;
+            }
+        }
+        if (encontrado == null) return;
+
+        String ev = "-";
+        String loc = "-";
+        if (encontrado.getLocalidad() != null) {
+            loc = encontrado.getLocalidad().getNombre();
+            if (encontrado.getLocalidad().getEvento() != null) {
+                ev = encontrado.getLocalidad().getEvento().getNombre();
+            }
+        }
+        String cliente = (encontrado.getPropietario() != null)
+                ? encontrado.getPropietario().getLogin()
+                : "(sin comprador)";
+
+        String msg = String.format(
+                "ID: %s%nEvento: %s%nLocalidad: %s%nCliente: %s%nEstado: %s%nPrecio base: %.0f",
+                encontrado.getId(),
+                ev,
+                loc,
+                cliente,
+                encontrado.getEstado(),
+                encontrado.getPrecio()
+        );
+        JOptionPane.showMessageDialog(this, msg, "Detalle del tiquete",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // ================== GANANCIAS ==================
+
+    private void verGananciasGUI() {
+        if (!asegurarOrganizador()) return;
+        String texto = organizador.verGanancias();
+        JOptionPane.showMessageDialog(this,
+                texto,
+                "Ganancias del organizador",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // ================== PERSISTENCIA ==================
 
     private void guardarCambios() {
         DataStore ds = new DataStore();
         ds.saveAll();
-    }
-
-    private Evento buscarEventoPorId(String id) {
-        for (Evento e : Main.eventos) {
-            if (e.getId().equalsIgnoreCase(id)) return e;
-        }
-        return null;
-    }
-
-    private Localidad buscarLocalidadPorId(String id) {
-        for (Localidad l : Main.localidades) {
-            if (l.getId().equalsIgnoreCase(id)) return l;
-        }
-        return null;
     }
 }

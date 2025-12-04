@@ -131,8 +131,7 @@ public class VentanaLogin extends JFrame {
                 if (o == null) {
                     mostrarErrorCredenciales();
                 } else {
-                    IServicioEventos servicioEventos = new ServicioEventosCSV();
-                    VentanaOrganizador vo = new VentanaOrganizador(o, servicioEventos);
+                    VentanaOrganizador vo = new VentanaOrganizador(o);
                     vo.setLocationRelativeTo(this);
                     vo.setVisible(true);
                     dispose();
