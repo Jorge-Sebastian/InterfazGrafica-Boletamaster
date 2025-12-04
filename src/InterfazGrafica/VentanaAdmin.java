@@ -3,28 +3,45 @@ package InterfazGrafica;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.JOptionPane;
+
+import Boletamaster.Administrador;
+import Boletamaster.Cliente;
+import Boletamaster.DataStore;
+import Boletamaster.Evento;
+import Boletamaster.Main;
+import Boletamaster.Usuario;
 
 public class VentanaAdmin extends JFrame {
 
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
 
-    private JTable tablaUsuarios;
-    private JTable tablaReportes;
+    private JTable tablaEventos;
+    private DefaultTableModel modeloEventos;
 
+    private Administrador admin;
+    private JLabel lblTarifas;
+
+    // Para compatibilidad con código que hace new VentanaAdmin()
     public VentanaAdmin() {
+        this(Main.admin);
+    }
+
+    public VentanaAdmin(Administrador admin) {
+        this.admin = admin != null ? admin : Main.admin;
+
         setTitle("Boletamaster - Administrador");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -37,207 +54,204 @@ public class VentanaAdmin extends JFrame {
         setContentPane(contentPane);
 
         // ========== HEADER ==========
-        JPanel panelHeader = new JPanel();
+        JPanel panelHeader = new JPanel(new BorderLayout());
         panelHeader.setBackground(Color.WHITE);
         panelHeader.setBorder(new EmptyBorder(10, 20, 10, 20));
-        panelHeader.setLayout(new BorderLayout());
         contentPane.add(panelHeader, BorderLayout.NORTH);
 
         JLabel lblTitulo = new JLabel("Panel de administrador");
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         panelHeader.add(lblTitulo, BorderLayout.WEST);
 
-        JLabel lblSubtitulo = new JLabel("Gestión global del sistema, usuarios y reportes");
-        lblSubtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblSubtitulo.setForeground(new Color(100, 100, 100));
-        panelHeader.add(lblSubtitulo, BorderLayout.SOUTH);
+        lblTarifas = new JLabel();
+        lblTarifas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTarifas.setForeground(new Color(100, 100, 100));
+        panelHeader.add(lblTarifas, BorderLayout.SOUTH);
 
-        // ========== CENTRO: JTabbedPane ==========
-        JPanel panelCentro = new JPanel();
+        JButton btnConfigTarifas = new JButton("Configurar tarifas");
+        btnConfigTarifas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        panelHeader.add(btnConfigTarifas, BorderLayout.EAST);
+
+        // ========== CENTRO: TABLA EVENTOS ==========
+        JPanel panelCentro = new JPanel(new BorderLayout());
         panelCentro.setOpaque(false);
-        panelCentro.setLayout(new BorderLayout());
         contentPane.add(panelCentro, BorderLayout.CENTER);
 
-        JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-        panelCentro.add(tabbedPane, BorderLayout.CENTER);
+        JLabel lblEventosTitulo = new JLabel("Eventos del sistema");
+        lblEventosTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
 
-        Font fontTituloTab = new Font("Segoe UI", Font.BOLD, 16);
-        Font fontDescTab = new Font("Segoe UI", Font.PLAIN, 12);
-        Font fontBoton = new Font("Segoe UI", Font.PLAIN, 13);
+        JLabel lblEventosDesc = new JLabel("Aquí puedes ver los eventos y cancelar uno con reembolso a clientes.");
+        lblEventosDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblEventosDesc.setForeground(new Color(100, 100, 100));
 
-        // ================== PESTAÑA: USUARIOS ==================
-        JPanel panelUsuarios = new JPanel(new BorderLayout(10, 10));
-        panelUsuarios.setBorder(new EmptyBorder(10, 10, 10, 10));
-        tabbedPane.addTab("Usuarios", null, panelUsuarios, "Gestión de usuarios del sistema");
+        JPanel panelTop = new JPanel(new BorderLayout());
+        panelTop.setOpaque(false);
+        panelTop.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelTop.add(lblEventosTitulo, BorderLayout.NORTH);
+        panelTop.add(lblEventosDesc, BorderLayout.SOUTH);
+        panelCentro.add(panelTop, BorderLayout.NORTH);
 
-        JPanel panelUsuariosHeader = new JPanel(new BorderLayout());
-        panelUsuariosHeader.setOpaque(false);
-        JLabel lblUsuariosTitulo = new JLabel("Usuarios");
-        lblUsuariosTitulo.setFont(fontTituloTab);
-        JLabel lblUsuariosDesc = new JLabel("Administra los usuarios del sistema y sus roles.");
-        lblUsuariosDesc.setFont(fontDescTab);
-        lblUsuariosDesc.setForeground(new Color(100, 100, 100));
-        panelUsuariosHeader.add(lblUsuariosTitulo, BorderLayout.NORTH);
-        panelUsuariosHeader.add(lblUsuariosDesc, BorderLayout.SOUTH);
-        panelUsuarios.add(panelUsuariosHeader, BorderLayout.NORTH);
+        String[] columnas = { "ID", "Nombre", "Fecha", "Venue", "Estado" };
+        modeloEventos = new DefaultTableModel(columnas, 0);
+        tablaEventos = new JTable(modeloEventos);
+        tablaEventos.setFillsViewportHeight(true);
+        JScrollPane scrollEventos = new JScrollPane(tablaEventos);
+        scrollEventos.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
+        panelCentro.add(scrollEventos, BorderLayout.CENTER);
 
-        String[] columnasUsuarios = { "ID", "Nombre", "Rol", "Estado" };
-        DefaultTableModel modeloUsuarios = new DefaultTableModel(columnasUsuarios, 0);
-        tablaUsuarios = new JTable(modeloUsuarios);
-        tablaUsuarios.setFillsViewportHeight(true);
-        JScrollPane scrollUsuarios = new JScrollPane(tablaUsuarios);
-        scrollUsuarios.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        panelUsuarios.add(scrollUsuarios, BorderLayout.CENTER);
+        JPanel panelBotones = new JPanel();
+        panelBotones.setBackground(Color.WHITE);
+        panelBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelCentro.add(panelBotones, BorderLayout.SOUTH);
 
-        JPanel panelUsuariosBotones = new JPanel();
-        panelUsuariosBotones.setBackground(Color.WHITE);
-        panelUsuariosBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
-        panelUsuarios.add(panelUsuariosBotones, BorderLayout.SOUTH);
+        JButton btnCancelarEvento = new JButton("Cancelar evento + reembolsar");
+        JButton btnRefrescar = new JButton("Refrescar lista");
 
-        JButton btnNuevoUsuario = new JButton("Nuevo usuario");
-        JButton btnEditarUsuario = new JButton("Editar");
-        JButton btnDesactivarUsuario = new JButton("Activar / Desactivar");
-        JButton btnRefrescarUsuarios = new JButton("Refrescar");
+        btnCancelarEvento.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnRefrescar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        btnNuevoUsuario.setFont(fontBoton);
-        btnEditarUsuario.setFont(fontBoton);
-        btnDesactivarUsuario.setFont(fontBoton);
-        btnRefrescarUsuarios.setFont(fontBoton);
+        panelBotones.add(btnCancelarEvento);
+        panelBotones.add(btnRefrescar);
 
-        panelUsuariosBotones.add(btnNuevoUsuario);
-        panelUsuariosBotones.add(btnEditarUsuario);
-        panelUsuariosBotones.add(btnDesactivarUsuario);
-        panelUsuariosBotones.add(btnRefrescarUsuarios);
+        // ========== CARGA INICIAL ==========
+        actualizarLabelTarifas();
+        cargarEventos();
 
-        // ================== PESTAÑA: REPORTES ==================
-        JPanel panelReportes = new JPanel(new BorderLayout(10, 10));
-        panelReportes.setBorder(new EmptyBorder(10, 10, 10, 10));
-        tabbedPane.addTab("Reportes", null, panelReportes, "Reportes y métricas del sistema");
+        // ========== ACCIONES ==========
 
-        JPanel panelReportesHeader = new JPanel(new BorderLayout());
-        panelReportesHeader.setOpaque(false);
-        JLabel lblReportesTitulo = new JLabel("Reportes");
-        lblReportesTitulo.setFont(fontTituloTab);
-        JLabel lblReportesDesc = new JLabel("Visualiza reportes generales de ventas, asistencia y rendimiento.");
-        lblReportesDesc.setFont(fontDescTab);
-        lblReportesDesc.setForeground(new Color(100, 100, 100));
-        panelReportesHeader.add(lblReportesTitulo, BorderLayout.NORTH);
-        panelReportesHeader.add(lblReportesDesc, BorderLayout.SOUTH);
-        panelReportes.add(panelReportesHeader, BorderLayout.NORTH);
+        btnRefrescar.addActionListener(e -> cargarEventos());
 
-        String[] columnasReportes = { "ID", "Tipo", "Rango de fechas", "Descripción" };
-        DefaultTableModel modeloReportes = new DefaultTableModel(columnasReportes, 0);
-        tablaReportes = new JTable(modeloReportes);
-        tablaReportes.setFillsViewportHeight(true);
-        JScrollPane scrollReportes = new JScrollPane(tablaReportes);
-        scrollReportes.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        panelReportes.add(scrollReportes, BorderLayout.CENTER);
+        btnConfigTarifas.addActionListener(e -> configurarTarifasGUI());
 
-        JPanel panelReportesBotones = new JPanel();
-        panelReportesBotones.setBackground(Color.WHITE);
-        panelReportesBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
-        panelReportes.add(panelReportesBotones, BorderLayout.SOUTH);
+        btnCancelarEvento.addActionListener(e -> cancelarEventoGUI());
+    }
 
-        JButton btnGenerarReporte = new JButton("Generar reporte");
-        JButton btnVerReporte = new JButton("Ver detalle");
-        JButton btnExportarReporte = new JButton("Exportar");
-        JButton btnRefrescarReportes = new JButton("Refrescar");
+    // ================== LÓGICA ==================
 
-        btnGenerarReporte.setFont(fontBoton);
-        btnVerReporte.setFont(fontBoton);
-        btnExportarReporte.setFont(fontBoton);
-        btnRefrescarReportes.setFont(fontBoton);
+    private void cargarEventos() {
+        modeloEventos.setRowCount(0);
 
-        panelReportesBotones.add(btnGenerarReporte);
-        panelReportesBotones.add(btnVerReporte);
-        panelReportesBotones.add(btnExportarReporte);
-        panelReportesBotones.add(btnRefrescarReportes);
+        if (Main.eventos.isEmpty()) {
+            return;
+        }
 
-        // ================== PESTAÑA: CONFIGURACIÓN ==================
-        JPanel panelConfig = new JPanel(new BorderLayout(10, 10));
-        panelConfig.setBorder(new EmptyBorder(10, 10, 10, 10));
-        tabbedPane.addTab("Configuración", null, panelConfig, "Parámetros generales del sistema");
+        for (Evento ev : Main.eventos) {
+            String venue = ev.getVenue() != null ? ev.getVenue().getNombre() : "-";
+            Object[] fila = {
+                    ev.getId(),
+                    ev.getNombre(),
+                    ev.getFecha(),
+                    venue,
+                    ev.getEstado()
+            };
+            modeloEventos.addRow(fila);
+        }
+    }
 
-        JPanel panelConfigHeader = new JPanel(new BorderLayout());
-        panelConfigHeader.setOpaque(false);
-        JLabel lblConfigTitulo = new JLabel("Configuración");
-        lblConfigTitulo.setFont(fontTituloTab);
-        JLabel lblConfigDesc = new JLabel("Ajusta parámetros globales del sistema (tarifas, rutas de archivos, etc.).");
-        lblConfigDesc.setFont(fontDescTab);
-        lblConfigDesc.setForeground(new Color(100, 100, 100));
-        panelConfigHeader.add(lblConfigTitulo, BorderLayout.NORTH);
-        panelConfigHeader.add(lblConfigDesc, BorderLayout.SOUTH);
-        panelConfig.add(panelConfigHeader, BorderLayout.NORTH);
+    private void actualizarLabelTarifas() {
+        if (admin == null) {
+            lblTarifas.setText("Tarifas no configuradas.");
+            return;
+        }
+        // Asumo que tu clase Administrador tiene estos getters
+        double p = admin.getPorcentajeServicio();
+        double c = admin.getCuotaEmision();
+        lblTarifas.setText(String.format("Tarifas actuales → Servicio: %.2f  |  Cuota de emisión: $%.0f", p, c));
+    }
 
-        JPanel panelConfigCentro = new JPanel();
-        panelConfigCentro.setBackground(Color.WHITE);
-        panelConfigCentro.setBorder(new EmptyBorder(30, 40, 30, 40));
-        panelConfig.add(panelConfigCentro, BorderLayout.CENTER);
+    private void configurarTarifasGUI() {
+        String porcStr = JOptionPane.showInputDialog(this,
+                "Porcentaje servicio (0.10 = 10%):",
+                "Configurar tarifas",
+                JOptionPane.PLAIN_MESSAGE);
+        if (porcStr == null) return;
 
-        JLabel lblConfigPlaceholder = new JLabel("Aquí irán los controles de configuración general (pendiente por implementar)");
-        lblConfigPlaceholder.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        lblConfigPlaceholder.setForeground(new Color(80, 80, 80));
-        panelConfigCentro.add(lblConfigPlaceholder);
+        String cuotaStr = JOptionPane.showInputDialog(this,
+                "Cuota de emisión:",
+                "Configurar tarifas",
+                JOptionPane.PLAIN_MESSAGE);
+        if (cuotaStr == null) return;
 
-        // ================== ACCIONES BÁSICAS (Placeholders) ==================
-
-        btnNuevoUsuario.addActionListener(e -> {
+        double p, c;
+        try {
+            p = Double.parseDouble(porcStr.trim());
+            c = Double.parseDouble(cuotaStr.trim());
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Aquí se abriría el formulario para crear un nuevo usuario.",
-                    "Nuevo usuario",
-                    JOptionPane.INFORMATION_MESSAGE);
-        });
+                    "Valores inválidos.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        btnEditarUsuario.addActionListener(e -> {
-            int fila = tablaUsuarios.getSelectedRow();
-            if (fila == -1) {
-                JOptionPane.showMessageDialog(this,
-                        "Debes seleccionar un usuario para editar.",
-                        "Sin selección",
-                        JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Aquí editaríamos el usuario con ID: " + tablaUsuarios.getValueAt(fila, 0),
-                        "Editar usuario",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
+        admin.configurarTarifas(p, c);
+        guardarCambios();
+        actualizarLabelTarifas();
 
-        btnDesactivarUsuario.addActionListener(e -> {
-            int fila = tablaUsuarios.getSelectedRow();
-            if (fila == -1) {
-                JOptionPane.showMessageDialog(this,
-                        "Debes seleccionar un usuario para activar/desactivar.",
-                        "Sin selección",
-                        JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Aquí cambiaríamos el estado del usuario con ID: " + tablaUsuarios.getValueAt(fila, 0),
-                        "Cambiar estado",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
+        JOptionPane.showMessageDialog(this,
+                "Tarifas actualizadas correctamente.",
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
 
-        btnGenerarReporte.addActionListener(e -> {
+    private void cancelarEventoGUI() {
+        int fila = tablaEventos.getSelectedRow();
+        if (fila == -1) {
             JOptionPane.showMessageDialog(this,
-                    "Aquí se mostraría un diálogo para configurar y generar un reporte.",
-                    "Generar reporte",
-                    JOptionPane.INFORMATION_MESSAGE);
-        });
+                    "Debes seleccionar un evento para cancelarlo.",
+                    "Sin selección",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-        btnVerReporte.addActionListener(e -> {
-            int fila = tablaReportes.getSelectedRow();
-            if (fila == -1) {
-                JOptionPane.showMessageDialog(this,
-                        "Debes seleccionar un reporte para ver el detalle.",
-                        "Sin selección",
-                        JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Aquí se vería el detalle del reporte con ID: " + tablaReportes.getValueAt(fila, 0),
-                        "Ver reporte",
-                        JOptionPane.INFORMATION_MESSAGE);
+        String idEvento = (String) tablaEventos.getValueAt(fila, 0);
+
+        Evento seleccionado = null;
+        for (Evento e : Main.eventos) {
+            if (e.getId().equalsIgnoreCase(idEvento)) {
+                seleccionado = e;
+                break;
             }
-        });
+        }
+
+        if (seleccionado == null) {
+            JOptionPane.showMessageDialog(this,
+                    "No se encontró el evento seleccionado.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Seguro que deseas cancelar el evento '" + seleccionado.getNombre() +
+                        "' y procesar reembolsos?",
+                "Confirmar cancelación",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        // ==== Lógica igual a cancelarYReembolsar(sc) ====
+        admin.cancelarEvento(seleccionado);
+
+        int cont = 0;
+        for (Usuario u : Main.usuarios) {
+            if (u instanceof Cliente) {
+                admin.procesarReembolso((Cliente) u, seleccionado);
+                cont++;
+            }
+        }
+
+        guardarCambios();
+        cargarEventos();
+
+        JOptionPane.showMessageDialog(this,
+                "Evento cancelado.\nReembolsos procesados para " + cont + " clientes.",
+                "Operación completada",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void guardarCambios() {
+        DataStore ds = new DataStore();
+        ds.saveAll();
     }
 }
