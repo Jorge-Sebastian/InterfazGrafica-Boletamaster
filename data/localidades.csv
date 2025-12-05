@@ -1,2 +1,2 @@
 id,nombre,precioBase,numerada,aforo,vendidos,eventoId
-L1,VIP,200000.0,true,200,0,E1
+L1,VIP,200000.0,true,200,1,E1
