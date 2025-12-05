@@ -3,16 +3,19 @@ package InterfazGrafica;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.JOptionPane;
 
 import Boletamaster.AuthUtil;
 import Boletamaster.Administrador;
@@ -38,67 +41,93 @@ public class VentanaLogin extends JFrame {
         setTitle("Iniciar sesión - " + tipoUsuario);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);
-        setBounds(100, 100, 449, 289);
+        setBounds(100, 100, 480, 320);
 
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(15, 15, 15, 15));
-        contentPane.setBackground(new Color(245, 245, 245));
+        contentPane.setBackground(UIUtils.COLOR_BG);
         contentPane.setLayout(new BorderLayout(10, 10));
         setContentPane(contentPane);
 
         // ========== HEADER ==========
+        JPanel panelHeader = new JPanel(new BorderLayout());
+        panelHeader.setBackground(UIUtils.COLOR_CARD);
+        panelHeader.setBorder(new EmptyBorder(10, 20, 10, 20));
+        contentPane.add(panelHeader, BorderLayout.NORTH);
+
         JLabel lblTitulo = new JLabel("Iniciar sesión como " + tipoUsuario.toLowerCase());
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        contentPane.add(lblTitulo, BorderLayout.NORTH);
+        lblTitulo.setFont(UIUtils.FONT_TITLE);
+        panelHeader.add(lblTitulo, BorderLayout.CENTER);
 
-        // ========== CENTRO: FORMULARIO ==========
-        JPanel panelCentro = new JPanel();
-        panelCentro.setOpaque(false);
-        panelCentro.setLayout(null);
-        contentPane.add(panelCentro, BorderLayout.CENTER);
+        JLabel lblSub = new JLabel("Ingresa tu usuario y contraseña para continuar");
+        lblSub.setHorizontalAlignment(SwingConstants.CENTER);
+        lblSub.setFont(UIUtils.FONT_SUBTITLE);
+        lblSub.setForeground(UIUtils.COLOR_MUTED);
+        panelHeader.add(lblSub, BorderLayout.SOUTH);
+
+        // ========== CENTRO: CARD CON FORM ==========
+        JPanel card = UIUtils.createCardPanel();
+        card.setLayout(new GridBagLayout());
+        contentPane.add(card, BorderLayout.CENTER);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.3;
 
         JLabel lblLogin = new JLabel("Usuario:");
-        lblLogin.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblLogin.setBounds(30, 10, 80, 20);
-        panelCentro.add(lblLogin);
+        lblLogin.setFont(UIUtils.FONT_SUBTITLE);
+        card.add(lblLogin, gbc);
 
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
         txtLogin = new JTextField();
-        txtLogin.setBounds(30, 30, 320, 26);
-        panelCentro.add(txtLogin);
+        txtLogin.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        card.add(txtLogin, gbc);
 
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.weightx = 0.3;
         JLabel lblPassword = new JLabel("Contraseña:");
-        lblPassword.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblPassword.setBounds(30, 70, 100, 20);
-        panelCentro.add(lblPassword);
+        lblPassword.setFont(UIUtils.FONT_SUBTITLE);
+        card.add(lblPassword, gbc);
 
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
         txtPassword = new JPasswordField();
-        txtPassword.setBounds(30, 90, 320, 26);
-        panelCentro.add(txtPassword);
+        txtPassword.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        card.add(txtPassword, gbc);
+
+        // Espacio vertical
+        gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.weighty = 1.0;
+        JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        card.add(spacer, gbc);
 
         // ========== BOTONES ==========
         JPanel panelBotones = new JPanel();
         panelBotones.setOpaque(false);
+        panelBotones.setBorder(new EmptyBorder(5, 5, 5, 5));
         contentPane.add(panelBotones, BorderLayout.SOUTH);
 
         JButton btnCancelar = new JButton("Cancelar");
         JButton btnIngresar = new JButton("Ingresar");
 
-        btnCancelar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btnIngresar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        UIUtils.styleSecondaryButton(btnCancelar);
+        UIUtils.stylePrimaryButton(btnIngresar);
 
         panelBotones.add(btnCancelar);
         panelBotones.add(btnIngresar);
 
         // ========== ACCIONES ==========
-
-        btnCancelar.addActionListener(e -> {
-            dispose();
-        });
-
-        btnIngresar.addActionListener(e -> {
-            manejarLogin();
-        });
+        btnCancelar.addActionListener(e -> dispose());
+        btnIngresar.addActionListener(e -> manejarLogin());
     }
 
     private void manejarLogin() {
@@ -143,7 +172,7 @@ public class VentanaLogin extends JFrame {
                 if (c == null) {
                     mostrarErrorCredenciales();
                 } else {
-                	IServicioEventos servicioEventos = new ServicioEventosCSV(); // Todos los eventos
+                    IServicioEventos servicioEventos = new ServicioEventosCSV(); // todos los eventos
                     VentanaCliente vc = new VentanaCliente(c, servicioEventos);
                     vc.setLocationRelativeTo(this);
                     vc.setVisible(true);

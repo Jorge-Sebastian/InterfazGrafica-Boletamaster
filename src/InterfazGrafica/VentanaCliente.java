@@ -10,28 +10,38 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.JOptionPane;
 
-import Boletamaster.*;
+import Boletamaster.Cliente;
+import Boletamaster.DataStore;
+import Boletamaster.Evento;
+import Boletamaster.IServicioEventos;
+import Boletamaster.Localidad;
+import Boletamaster.Main;
+import Boletamaster.Pago;
+import Boletamaster.Tiquete;
+import Boletamaster.TiqueteNumerado;
+import Boletamaster.Usuario;
 
 public class VentanaCliente extends JFrame {
 
     private static final long serialVersionUID = 1L;
+
     private JPanel contentPane;
 
     private JTable tablaEventosDisponibles;
-    private JTable tablaMisTiquetes;
     private JTable tablaInventario;
+    private JTable tablaMisTiquetes;
 
     private DefaultTableModel modeloEventos;
-    private DefaultTableModel modeloTiquetes;
     private DefaultTableModel modeloInventario;
+    private DefaultTableModel modeloTiquetes;
 
     private Cliente cliente;
     private IServicioEventos servicioEventos;
@@ -47,71 +57,64 @@ public class VentanaCliente extends JFrame {
         setResizable(false);
         setBounds(100, 100, 900, 550);
 
+        // ---------- CONTENEDOR PRINCIPAL ----------
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
-        contentPane.setBackground(new Color(245, 245, 245));
+        contentPane.setBackground(UIUtils.COLOR_BG);
         contentPane.setLayout(new BorderLayout(10, 10));
         setContentPane(contentPane);
 
-        // ========== HEADER ==========
-        JPanel panelHeader = new JPanel();
-        panelHeader.setBackground(Color.WHITE);
+        // ================== HEADER ==================
+        JPanel panelHeader = new JPanel(new BorderLayout());
+        panelHeader.setBackground(UIUtils.COLOR_CARD);
         panelHeader.setBorder(new EmptyBorder(10, 20, 10, 20));
-        panelHeader.setLayout(new BorderLayout());
         contentPane.add(panelHeader, BorderLayout.NORTH);
 
         JLabel lblTitulo = new JLabel("Portal de cliente (" + cliente.getLogin() + ")");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitulo.setFont(UIUtils.FONT_TITLE);
         panelHeader.add(lblTitulo, BorderLayout.WEST);
 
         lblSaldoHeader = new JLabel();
-        lblSaldoHeader.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblSaldoHeader.setForeground(new Color(100, 100, 100));
+        lblSaldoHeader.setFont(UIUtils.FONT_SUBTITLE);
+        lblSaldoHeader.setForeground(UIUtils.COLOR_MUTED);
         panelHeader.add(lblSaldoHeader, BorderLayout.SOUTH);
 
         JButton btnAbonarSaldo = new JButton("Abonar saldo");
-        btnAbonarSaldo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        UIUtils.stylePrimaryButton(btnAbonarSaldo);
         panelHeader.add(btnAbonarSaldo, BorderLayout.EAST);
 
-        // ========== CENTRO: JTabbedPane ==========
-        JPanel panelCentro = new JPanel();
+        // ================== CENTRO: TABS ==================
+        JPanel panelCentro = new JPanel(new BorderLayout());
         panelCentro.setOpaque(false);
-        panelCentro.setLayout(new BorderLayout());
         contentPane.add(panelCentro, BorderLayout.CENTER);
 
         JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
         panelCentro.add(tabbedPane, BorderLayout.CENTER);
 
-        Font fontTituloTab = new Font("Segoe UI", Font.BOLD, 16);
-        Font fontDescTab = new Font("Segoe UI", Font.PLAIN, 12);
-        Font fontBoton = new Font("Segoe UI", Font.PLAIN, 13);
-
-        // ================== PESTAÑA: EVENTOS DISPONIBLES ==================
+        // ---------- TAB 1: EVENTOS DISPONIBLES ----------
         JPanel panelEventos = new JPanel(new BorderLayout(10, 10));
-        panelEventos.setBorder(new EmptyBorder(10, 10, 10, 10));
-        tabbedPane.addTab("Eventos disponibles", null, panelEventos, "Eventos a los que puedes comprar tiquetes");
+        panelEventos.setBackground(UIUtils.COLOR_CARD);
+        panelEventos.setBorder(UIUtils.softCardBorder());
+        tabbedPane.addTab("Eventos disponibles", null, panelEventos,
+                "Eventos a los que puedes comprar tiquetes");
 
-        JPanel panelEventosHeader = new JPanel(new BorderLayout());
-        panelEventosHeader.setOpaque(false);
-        JLabel lblEventosTitulo = new JLabel("Eventos disponibles");
-        lblEventosTitulo.setFont(fontTituloTab);
-        JLabel lblEventosDesc = new JLabel("Selecciona un evento para ver detalles o comprar tiquetes por ID.");
-        lblEventosDesc.setFont(fontDescTab);
-        lblEventosDesc.setForeground(new Color(100, 100, 100));
-        panelEventosHeader.add(lblEventosTitulo, BorderLayout.NORTH);
-        panelEventosHeader.add(lblEventosDesc, BorderLayout.SOUTH);
-        panelEventos.add(panelEventosHeader, BorderLayout.NORTH);
+        JPanel headerEventos = UIUtils.createHeader(
+                "Eventos disponibles",
+                "Selecciona un evento para ver detalles o comprar tiquetes por ID.");
+        panelEventos.add(headerEventos, BorderLayout.NORTH);
 
         String[] columnasEventos = { "ID", "Nombre", "Fecha", "Ciudad", "Estado" };
         modeloEventos = new DefaultTableModel(columnasEventos, 0);
         tablaEventosDisponibles = new JTable(modeloEventos);
         tablaEventosDisponibles.setFillsViewportHeight(true);
+        UIUtils.stylizeTable(tablaEventosDisponibles);
+
         JScrollPane scrollEventos = new JScrollPane(tablaEventosDisponibles);
         scrollEventos.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         panelEventos.add(scrollEventos, BorderLayout.CENTER);
 
         JPanel panelEventosBotones = new JPanel();
-        panelEventosBotones.setBackground(Color.WHITE);
+        panelEventosBotones.setOpaque(false);
         panelEventosBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelEventos.add(panelEventosBotones, BorderLayout.SOUTH);
 
@@ -119,113 +122,104 @@ public class VentanaCliente extends JFrame {
         JButton btnComprar = new JButton("Comprar tiquetes (por ID)");
         JButton btnRefrescarEventos = new JButton("Refrescar");
 
-        btnVerDetalleEvento.setFont(fontBoton);
-        btnComprar.setFont(fontBoton);
-        btnRefrescarEventos.setFont(fontBoton);
+        UIUtils.styleSecondaryButton(btnVerDetalleEvento);
+        UIUtils.stylePrimaryButton(btnComprar);
+        UIUtils.styleSecondaryButton(btnRefrescarEventos);
 
         panelEventosBotones.add(btnVerDetalleEvento);
         panelEventosBotones.add(btnComprar);
         panelEventosBotones.add(btnRefrescarEventos);
 
-        // ================== PESTAÑA: INVENTARIO ==================
+        // ---------- TAB 2: INVENTARIO ----------
         JPanel panelInventario = new JPanel(new BorderLayout(10, 10));
-        panelInventario.setBorder(new EmptyBorder(10, 10, 10, 10));
-        tabbedPane.addTab("Inventario", null, panelInventario, "Tiquetes disponibles en el sistema");
+        panelInventario.setBackground(UIUtils.COLOR_CARD);
+        panelInventario.setBorder(UIUtils.softCardBorder());
+        tabbedPane.addTab("Inventario", null, panelInventario,
+                "Tiquetes disponibles en el sistema");
 
-        JPanel panelInvHeader = new JPanel(new BorderLayout());
-        panelInvHeader.setOpaque(false);
-        JLabel lblInvTitulo = new JLabel("Inventario de tiquetes");
-        lblInvTitulo.setFont(fontTituloTab);
-        JLabel lblInvDesc = new JLabel("Aquí se listan los tiquetes disponibles (como en 'verInventario()').");
-        lblInvDesc.setFont(fontDescTab);
-        lblInvDesc.setForeground(new Color(100, 100, 100));
-        panelInvHeader.add(lblInvTitulo, BorderLayout.NORTH);
-        panelInvHeader.add(lblInvDesc, BorderLayout.SOUTH);
-        panelInventario.add(panelInvHeader, BorderLayout.NORTH);
+        JPanel headerInv = UIUtils.createHeader(
+                "Inventario de tiquetes",
+                "Aquí se listan los tiquetes disponibles (como en 'verInventario()').");
+        panelInventario.add(headerInv, BorderLayout.NORTH);
 
         String[] columnasInv = { "ID", "Estado", "Evento", "Asiento", "Precio base", "Total con tarifas" };
         modeloInventario = new DefaultTableModel(columnasInv, 0);
         tablaInventario = new JTable(modeloInventario);
         tablaInventario.setFillsViewportHeight(true);
+        UIUtils.stylizeTable(tablaInventario);
+
         JScrollPane scrollInv = new JScrollPane(tablaInventario);
         scrollInv.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         panelInventario.add(scrollInv, BorderLayout.CENTER);
 
         JPanel panelInvBotones = new JPanel();
-        panelInvBotones.setBackground(Color.WHITE);
+        panelInvBotones.setOpaque(false);
         panelInvBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelInventario.add(panelInvBotones, BorderLayout.SOUTH);
 
         JButton btnRefrescarInv = new JButton("Refrescar inventario");
-        btnRefrescarInv.setFont(fontBoton);
+        UIUtils.styleSecondaryButton(btnRefrescarInv);
         panelInvBotones.add(btnRefrescarInv);
 
-        // ================== PESTAÑA: MIS TIQUETES ==================
+        // ---------- TAB 3: MIS TIQUETES ----------
         JPanel panelMisTiquetes = new JPanel(new BorderLayout(10, 10));
-        panelMisTiquetes.setBorder(new EmptyBorder(10, 10, 10, 10));
-        tabbedPane.addTab("Mis tiquetes", null, panelMisTiquetes, "Tiquetes comprados");
+        panelMisTiquetes.setBackground(UIUtils.COLOR_CARD);
+        panelMisTiquetes.setBorder(UIUtils.softCardBorder());
+        tabbedPane.addTab("Mis tiquetes", null, panelMisTiquetes,
+                "Tiquetes comprados");
 
-        JPanel panelMisTiqHeader = new JPanel(new BorderLayout());
-        panelMisTiqHeader.setOpaque(false);
-        JLabel lblMisTiqTitulo = new JLabel("Mis tiquetes");
-        lblMisTiqTitulo.setFont(fontTituloTab);
-        JLabel lblMisTiqDesc = new JLabel("Consulta y gestiona tus tiquetes. Puedes transferirlos a otro cliente.");
-        lblMisTiqDesc.setFont(fontDescTab);
-        lblMisTiqDesc.setForeground(new Color(100, 100, 100));
-        panelMisTiqHeader.add(lblMisTiqTitulo, BorderLayout.NORTH);
-        panelMisTiqHeader.add(lblMisTiqDesc, BorderLayout.SOUTH);
-        panelMisTiquetes.add(panelMisTiqHeader, BorderLayout.NORTH);
+        JPanel headerMisTiq = UIUtils.createHeader(
+                "Mis tiquetes",
+                "Consulta y gestiona tus tiquetes. Puedes transferirlos a otro cliente.");
+        panelMisTiquetes.add(headerMisTiq, BorderLayout.NORTH);
 
         String[] columnasTiquetes = { "ID", "Evento", "Fecha", "Localidad", "Estado" };
         modeloTiquetes = new DefaultTableModel(columnasTiquetes, 0);
         tablaMisTiquetes = new JTable(modeloTiquetes);
         tablaMisTiquetes.setFillsViewportHeight(true);
-        JScrollPane scrollTiquetes = new JScrollPane(tablaMisTiquetes);
-        scrollTiquetes.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        panelMisTiquetes.add(scrollTiquetes, BorderLayout.CENTER);
+        UIUtils.stylizeTable(tablaMisTiquetes);
+
+        JScrollPane scrollTiq = new JScrollPane(tablaMisTiquetes);
+        scrollTiq.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
+        panelMisTiquetes.add(scrollTiq, BorderLayout.CENTER);
 
         JPanel panelMisTiqBotones = new JPanel();
-        panelMisTiqBotones.setBackground(Color.WHITE);
+        panelMisTiqBotones.setOpaque(false);
         panelMisTiqBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelMisTiquetes.add(panelMisTiqBotones, BorderLayout.SOUTH);
 
-        JButton btnVerTiq = new JButton("Ver detalle");
+        JButton btnVerTiq = new JButton("Ver / Imprimir");
         JButton btnTransferirTiq = new JButton("Transferir tiquete");
         JButton btnRefrescarTiq = new JButton("Refrescar");
 
-        btnVerTiq.setFont(fontBoton);
-        btnTransferirTiq.setFont(fontBoton);
-        btnRefrescarTiq.setFont(fontBoton);
+        UIUtils.stylePrimaryButton(btnVerTiq);
+        UIUtils.styleSecondaryButton(btnTransferirTiq);
+        UIUtils.styleSecondaryButton(btnRefrescarTiq);
 
         panelMisTiqBotones.add(btnVerTiq);
         panelMisTiqBotones.add(btnTransferirTiq);
         panelMisTiqBotones.add(btnRefrescarTiq);
 
-        // ================== PESTAÑA: PERFIL (BASE) ==================
+        // ---------- TAB 4: PERFIL (PLACEHOLDER) ----------
         JPanel panelPerfil = new JPanel(new BorderLayout(10, 10));
-        panelPerfil.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelPerfil.setBackground(UIUtils.COLOR_CARD);
+        panelPerfil.setBorder(UIUtils.softCardBorder());
         tabbedPane.addTab("Mi perfil", null, panelPerfil, "Datos básicos del cliente");
 
-        JPanel panelPerfilHeader = new JPanel(new BorderLayout());
-        panelPerfilHeader.setOpaque(false);
-        JLabel lblPerfilTitulo = new JLabel("Mi perfil");
-        lblPerfilTitulo.setFont(fontTituloTab);
-        JLabel lblPerfilDesc = new JLabel("Aquí irán los datos del cliente y opciones para actualizar información (pendiente).");
-        lblPerfilDesc.setFont(fontDescTab);
-        lblPerfilDesc.setForeground(new Color(100, 100, 100));
-        panelPerfilHeader.add(lblPerfilTitulo, BorderLayout.NORTH);
-        panelPerfilHeader.add(lblPerfilDesc, BorderLayout.SOUTH);
-        panelPerfil.add(panelPerfilHeader, BorderLayout.NORTH);
+        JPanel headerPerfil = UIUtils.createHeader(
+                "Mi perfil",
+                "Aquí irán los datos del cliente y opciones para actualizar información (pendiente).");
+        panelPerfil.add(headerPerfil, BorderLayout.NORTH);
 
-        JPanel panelPerfilCentro = new JPanel();
-        panelPerfilCentro.setBackground(Color.WHITE);
-        panelPerfilCentro.setBorder(new EmptyBorder(30, 40, 30, 40));
-        panelPerfil.add(panelPerfilCentro, BorderLayout.CENTER);
-
-        JLabel lblPerfilPlaceholder = new JLabel("Aquí irán los datos del cliente y opciones para actualizar información.");
-        lblPerfilPlaceholder.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        lblPerfilPlaceholder.setForeground(new Color(80, 80, 80));
-        panelPerfilCentro.add(lblPerfilPlaceholder);
+        JPanel centroPerfil = new JPanel();
+        centroPerfil.setOpaque(false);
+        centroPerfil.setBorder(new EmptyBorder(30, 40, 30, 40));
+        JLabel lblPerfil = new JLabel(
+                "Aquí irán los datos del cliente y opciones para actualizar información.");
+        lblPerfil.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblPerfil.setForeground(new Color(80, 80, 80));
+        centroPerfil.add(lblPerfil);
+        panelPerfil.add(centroPerfil, BorderLayout.CENTER);
 
         // ================== CARGA INICIAL ==================
         actualizarSaldoHeader();
@@ -234,51 +228,19 @@ public class VentanaCliente extends JFrame {
         cargarMisTiquetes();
 
         // ================== ACCIONES ==================
-
         btnAbonarSaldo.addActionListener(e -> abonarSaldo());
 
         btnRefrescarEventos.addActionListener(e -> cargarEventosDisponibles());
         btnRefrescarInv.addActionListener(e -> cargarInventario());
         btnRefrescarTiq.addActionListener(e -> cargarMisTiquetes());
 
-        btnVerDetalleEvento.addActionListener(e -> {
-            int fila = tablaEventosDisponibles.getSelectedRow();
-            if (fila == -1) {
-                JOptionPane.showMessageDialog(this,
-                        "Debes seleccionar un evento para ver el detalle.",
-                        "Sin selección",
-                        JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Aquí mostraríamos el detalle del evento con ID: " +
-                                tablaEventosDisponibles.getValueAt(fila, 0),
-                        "Detalle de evento",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-
+        btnVerDetalleEvento.addActionListener(e -> verDetalleEvento());
         btnComprar.addActionListener(e -> comprarTiquetesPorId());
-
-        btnVerTiq.addActionListener(e -> {
-            int fila = tablaMisTiquetes.getSelectedRow();
-            if (fila == -1) {
-                JOptionPane.showMessageDialog(this,
-                        "Debes seleccionar un tiquete para ver el detalle.",
-                        "Sin selección",
-                        JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Aquí mostraríamos el detalle del tiquete con ID: " +
-                                tablaMisTiquetes.getValueAt(fila, 0),
-                        "Detalle de tiquete",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-
+        btnVerTiq.addActionListener(e -> verOImprimirTiquete());
         btnTransferirTiq.addActionListener(e -> transferirTiqueteSeleccionado());
     }
 
-    // ======== MÉTODOS DE CARGA ========
+    // ================== CARGA DE DATOS ==================
 
     private void actualizarSaldoHeader() {
         lblSaldoHeader.setText("Saldo actual: $" + (int) cliente.getSaldo());
@@ -291,7 +253,7 @@ public class VentanaCliente extends JFrame {
         if (servicioEventos != null) {
             eventos = servicioEventos.listarEventos();
         } else {
-            eventos = Boletamaster.Main.eventos; // fallback
+            eventos = Main.eventos;
         }
 
         for (Evento ev : eventos) {
@@ -313,7 +275,7 @@ public class VentanaCliente extends JFrame {
     private void cargarInventario() {
         modeloInventario.setRowCount(0);
 
-        for (Tiquete t : Boletamaster.Main.inventario) {
+        for (Tiquete t : Main.inventario) {
             String evNombre = "-";
             String asiento = "-";
 
@@ -325,7 +287,7 @@ public class VentanaCliente extends JFrame {
             }
 
             double base = t.getPrecio();
-            double total = t.calcularPrecioTotal(Boletamaster.Main.admin);
+            double total = t.calcularPrecioTotal(Main.admin);
 
             Object[] fila = {
                     t.getId(),
@@ -370,14 +332,31 @@ public class VentanaCliente extends JFrame {
         }
     }
 
-    // ======== LÓGICA DE ACCIONES (equivalente al Main de consola) ========
+    // ================== ACCIONES ==================
+
+    private void verDetalleEvento() {
+        int fila = tablaEventosDisponibles.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Debes seleccionar un evento para ver el detalle.",
+                    "Sin selección",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String id = (String) tablaEventosDisponibles.getValueAt(fila, 0);
+        JOptionPane.showMessageDialog(this,
+                "Aquí podrías mostrar el detalle del evento con ID: " + id,
+                "Detalle de evento",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
 
     private void abonarSaldo() {
         String input = JOptionPane.showInputDialog(this,
                 "Valor a abonar:",
                 "Abonar saldo",
                 JOptionPane.PLAIN_MESSAGE);
-        if (input == null) return; // canceló
+        if (input == null) return;
 
         double v;
         try {
@@ -435,14 +414,14 @@ public class VentanaCliente extends JFrame {
             return;
         }
 
-        Pago p = cliente.comprarTiquetes(items, Boletamaster.Main.admin);
+        Pago p = cliente.comprarTiquetes(items, Main.admin);
         if (p == null) {
             JOptionPane.showMessageDialog(this,
                     "Compra rechazada (saldo insuficiente o problemas de disponibilidad).",
                     "Compra rechazada",
                     JOptionPane.ERROR_MESSAGE);
         } else {
-            Boletamaster.Main.pagos.add(p);
+            Main.pagos.add(p);
             guardarCambios();
             actualizarSaldoHeader();
             cargarInventario();
@@ -453,6 +432,35 @@ public class VentanaCliente extends JFrame {
                     "Compra exitosa",
                     JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+
+    private void verOImprimirTiquete() {
+        int fila = tablaMisTiquetes.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Debes seleccionar un tiquete para ver/imprimir.",
+                    "Sin selección",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String idTiq = (String) tablaMisTiquetes.getValueAt(fila, 0);
+        Tiquete tiq = buscarTiqueteDelCliente(idTiq);
+        if (tiq == null) {
+            JOptionPane.showMessageDialog(this,
+                    "No se encontró el tiquete seleccionado.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        DialogoImprimirTiquete dlg = new DialogoImprimirTiquete(this, tiq);
+        dlg.setLocationRelativeTo(this);
+        dlg.setVisible(true);
+
+        // Después de cerrar el diálogo recargamos info (por si se marcó como impreso)
+        cargarMisTiquetes();
+        cargarInventario();
     }
 
     private void transferirTiqueteSeleccionado() {
@@ -466,14 +474,7 @@ public class VentanaCliente extends JFrame {
         }
 
         String idTiq = (String) tablaMisTiquetes.getValueAt(fila, 0);
-        Tiquete elegido = null;
-        for (Tiquete t : cliente.getTiquetes()) {
-            if (t.getId().equalsIgnoreCase(idTiq)) {
-                elegido = t;
-                break;
-            }
-        }
-
+        Tiquete elegido = buscarTiqueteDelCliente(idTiq);
         if (elegido == null) {
             JOptionPane.showMessageDialog(this,
                     "No se encontró el tiquete seleccionado en tu lista.",
@@ -520,7 +521,7 @@ public class VentanaCliente extends JFrame {
         }
     }
 
-    // ======== HELPERS BACKEND ========
+    // ================== HELPERS BACKEND ==================
 
     private void guardarCambios() {
         DataStore ds = new DataStore();
@@ -528,14 +529,23 @@ public class VentanaCliente extends JFrame {
     }
 
     private Tiquete buscarTiquetePorId(String id) {
-        for (Tiquete t : Boletamaster.Main.inventario) {
+        for (Tiquete t : Main.inventario) {
             if (t.getId().equalsIgnoreCase(id)) return t;
         }
         return null;
     }
 
+    private Tiquete buscarTiqueteDelCliente(String id) {
+        for (Tiquete t : cliente.getTiquetes()) {
+            if (t.getId().equalsIgnoreCase(id)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
     private Cliente buscarClientePorLogin(String login) {
-        for (Usuario u : Boletamaster.Main.usuarios) {
+        for (Usuario u : Main.usuarios) {
             if (u instanceof Cliente && u.getLogin().equals(login)) {
                 return (Cliente) u;
             }

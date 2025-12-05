@@ -106,8 +106,8 @@ public class VentanaPrincipal extends JFrame {
 		// Botón Administrador
 		JButton btnAdmin = new JButton("Administrador");
 		btnAdmin.setFont(new Font("Segoe UI", Font.BOLD, 14));
-		btnAdmin.setBackground(new Color(0, 255, 128));
-		btnAdmin.setForeground(new Color(0, 0, 0));
+		btnAdmin.setBackground(new Color(192, 192, 192));
+		btnAdmin.setForeground(new Color(0, 0, 128));
 		btnAdmin.setFocusPainted(false);
 		btnAdmin.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
 		btnAdmin.setBounds(317, 95, 220, 40);
@@ -116,8 +116,8 @@ public class VentanaPrincipal extends JFrame {
 		// Botón Organizador
 		JButton btnOrganizador = new JButton("Organizador");
 		btnOrganizador.setFont(new Font("Segoe UI", Font.BOLD, 14));
-		btnOrganizador.setBackground(new Color(3, 169, 244));
-		btnOrganizador.setForeground(new Color(0, 0, 0));
+		btnOrganizador.setBackground(new Color(192, 192, 192));
+		btnOrganizador.setForeground(new Color(0, 0, 128));
 		btnOrganizador.setFocusPainted(false);
 		btnOrganizador.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
 		btnOrganizador.setBounds(317, 145, 220, 40);
@@ -126,8 +126,8 @@ public class VentanaPrincipal extends JFrame {
 		// Botón Cliente
 		JButton btnCliente = new JButton("Cliente");
 		btnCliente.setFont(new Font("Segoe UI", Font.BOLD, 14));
-		btnCliente.setBackground(new Color(0, 255, 255));
-		btnCliente.setForeground(new Color(33, 33, 33));
+		btnCliente.setBackground(new Color(192, 192, 192));
+		btnCliente.setForeground(new Color(0, 0, 128));
 		btnCliente.setFocusPainted(false);
 		btnCliente.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
 		btnCliente.setBounds(317, 195, 220, 40);

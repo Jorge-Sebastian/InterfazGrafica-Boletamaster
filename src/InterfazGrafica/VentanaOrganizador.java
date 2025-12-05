@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -18,7 +19,6 @@ import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
-import Boletamaster.Administrador;
 import Boletamaster.DataStore;
 import Boletamaster.Evento;
 import Boletamaster.Localidad;
@@ -29,10 +29,6 @@ import Boletamaster.Tiquete;
 import Boletamaster.TiqueteNumerado;
 import Boletamaster.TiqueteSimple;
 import Boletamaster.IServicioEventos;
-import Boletamaster.Cliente;
-import Boletamaster.Usuario;
-
-import java.util.List;
 
 public class VentanaOrganizador extends JFrame {
 
@@ -82,28 +78,28 @@ public class VentanaOrganizador extends JFrame {
 
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
-        contentPane.setBackground(new Color(245, 245, 245));
+        contentPane.setBackground(UIUtils.COLOR_BG);
         contentPane.setLayout(new BorderLayout(10, 10));
         setContentPane(contentPane);
 
         // ---------- HEADER ----------
-        JPanel panelHeader = new JPanel();
-        panelHeader.setBackground(Color.WHITE);
+        JPanel panelHeader = new JPanel(new BorderLayout());
+        panelHeader.setBackground(UIUtils.COLOR_CARD);
         panelHeader.setBorder(new EmptyBorder(10, 20, 10, 20));
-        panelHeader.setLayout(new BorderLayout());
         contentPane.add(panelHeader, BorderLayout.NORTH);
 
         JLabel lblTitulo = new JLabel("Panel de organizador");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitulo.setFont(UIUtils.FONT_TITLE);
         panelHeader.add(lblTitulo, BorderLayout.WEST);
 
-        JLabel lblSubtitulo = new JLabel("Creación y administración de eventos, localidades, ofertas y tiquetes");
-        lblSubtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblSubtitulo.setForeground(new Color(100, 100, 100));
+        JLabel lblSubtitulo = new JLabel(
+                "Creación y administración de eventos, localidades, ofertas y tiquetes");
+        lblSubtitulo.setFont(UIUtils.FONT_SUBTITLE);
+        lblSubtitulo.setForeground(UIUtils.COLOR_MUTED);
         panelHeader.add(lblSubtitulo, BorderLayout.SOUTH);
 
         JButton btnVerGanancias = new JButton("Ver ganancias");
-        btnVerGanancias.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        UIUtils.stylePrimaryButton(btnVerGanancias);
         panelHeader.add(btnVerGanancias, BorderLayout.EAST);
 
         // ---------- CENTRO ----------
@@ -117,31 +113,27 @@ public class VentanaOrganizador extends JFrame {
 
         // ================== PESTAÑA EVENTOS ==================
         JPanel panelEventos = new JPanel(new BorderLayout(10, 10));
-        panelEventos.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelEventos.setBackground(UIUtils.COLOR_CARD);
+        panelEventos.setBorder(UIUtils.softCardBorder());
         tabbedPane.addTab("Eventos", null, panelEventos, "Gestión de eventos");
 
-        JLabel lblEventosTitulo = new JLabel("Eventos");
-        lblEventosTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        JLabel lblEventosDesc = new JLabel("Administra los eventos disponibles para la venta de tiquetes.");
-        lblEventosDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblEventosDesc.setForeground(new Color(100, 100, 100));
-
-        JPanel panelEventosHeader = new JPanel(new BorderLayout());
-        panelEventosHeader.setOpaque(false);
-        panelEventosHeader.add(lblEventosTitulo, BorderLayout.NORTH);
-        panelEventosHeader.add(lblEventosDesc, BorderLayout.SOUTH);
+        JPanel panelEventosHeader = UIUtils.createHeader(
+                "Eventos",
+                "Administra los eventos disponibles para la venta de tiquetes.");
         panelEventos.add(panelEventosHeader, BorderLayout.NORTH);
 
         String[] columnasEventos = { "ID", "Nombre", "Fecha", "Ciudad", "Estado" };
         modeloEventos = new DefaultTableModel(columnasEventos, 0);
         tablaEventos = new JTable(modeloEventos);
         tablaEventos.setFillsViewportHeight(true);
+        UIUtils.stylizeTable(tablaEventos);
+
         JScrollPane scrollEventos = new JScrollPane(tablaEventos);
         scrollEventos.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         panelEventos.add(scrollEventos, BorderLayout.CENTER);
 
         JPanel panelEventosBotones = new JPanel();
-        panelEventosBotones.setBackground(Color.WHITE);
+        panelEventosBotones.setOpaque(false);
         panelEventosBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelEventos.add(panelEventosBotones, BorderLayout.SOUTH);
 
@@ -150,11 +142,10 @@ public class VentanaOrganizador extends JFrame {
         JButton btnEliminarEvento = new JButton("Eliminar");
         JButton btnRefrescarEventos = new JButton("Refrescar");
 
-        Font fontBoton = new Font("Segoe UI", Font.PLAIN, 13);
-        btnNuevoEvento.setFont(fontBoton);
-        btnEditarEvento.setFont(fontBoton);
-        btnEliminarEvento.setFont(fontBoton);
-        btnRefrescarEventos.setFont(fontBoton);
+        UIUtils.stylePrimaryButton(btnNuevoEvento);
+        UIUtils.styleSecondaryButton(btnEditarEvento);
+        UIUtils.styleSecondaryButton(btnEliminarEvento);
+        UIUtils.styleSecondaryButton(btnRefrescarEventos);
 
         panelEventosBotones.add(btnNuevoEvento);
         panelEventosBotones.add(btnEditarEvento);
@@ -163,31 +154,28 @@ public class VentanaOrganizador extends JFrame {
 
         // ================== PESTAÑA LOCALIDADES ==================
         JPanel panelLocalidades = new JPanel(new BorderLayout(10, 10));
-        panelLocalidades.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelLocalidades.setBackground(UIUtils.COLOR_CARD);
+        panelLocalidades.setBorder(UIUtils.softCardBorder());
         tabbedPane.addTab("Localidades", null, panelLocalidades, "Localidades por evento");
 
-        JLabel lblLocTitulo = new JLabel("Localidades");
-        lblLocTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        JLabel lblLocDesc = new JLabel("Configura localidades, precios, capacidad y ofertas para cada evento.");
-        lblLocDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblLocDesc.setForeground(new Color(100, 100, 100));
-
-        JPanel panelLocHeader = new JPanel(new BorderLayout());
-        panelLocHeader.setOpaque(false);
-        panelLocHeader.add(lblLocTitulo, BorderLayout.NORTH);
-        panelLocHeader.add(lblLocDesc, BorderLayout.SOUTH);
+        JPanel panelLocHeader = UIUtils.createHeader(
+                "Localidades",
+                "Configura localidades, precios, capacidad y ofertas para cada evento.");
         panelLocalidades.add(panelLocHeader, BorderLayout.NORTH);
 
-        String[] columnasLocalidades = { "ID", "Evento", "Nombre localidad", "Capacidad", "Vendidos", "Precio vigente" };
+        String[] columnasLocalidades = { "ID", "Evento", "Nombre localidad",
+                "Capacidad", "Vendidos", "Precio vigente" };
         modeloLocalidades = new DefaultTableModel(columnasLocalidades, 0);
         tablaLocalidades = new JTable(modeloLocalidades);
         tablaLocalidades.setFillsViewportHeight(true);
+        UIUtils.stylizeTable(tablaLocalidades);
+
         JScrollPane scrollLocalidades = new JScrollPane(tablaLocalidades);
         scrollLocalidades.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         panelLocalidades.add(scrollLocalidades, BorderLayout.CENTER);
 
         JPanel panelLocBotones = new JPanel();
-        panelLocBotones.setBackground(Color.WHITE);
+        panelLocBotones.setOpaque(false);
         panelLocBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelLocalidades.add(panelLocBotones, BorderLayout.SOUTH);
 
@@ -198,12 +186,12 @@ public class VentanaOrganizador extends JFrame {
         JButton btnCrearTiq = new JButton("Crear tiquete");
         JButton btnRefrescarLoc = new JButton("Refrescar");
 
-        btnNuevaLoc.setFont(fontBoton);
-        btnEditarLoc.setFont(fontBoton);
-        btnEliminarLoc.setFont(fontBoton);
-        btnCrearOferta.setFont(fontBoton);
-        btnCrearTiq.setFont(fontBoton);
-        btnRefrescarLoc.setFont(fontBoton);
+        UIUtils.stylePrimaryButton(btnNuevaLoc);
+        UIUtils.styleSecondaryButton(btnEditarLoc);
+        UIUtils.styleSecondaryButton(btnEliminarLoc);
+        UIUtils.stylePrimaryButton(btnCrearOferta);
+        UIUtils.stylePrimaryButton(btnCrearTiq);
+        UIUtils.styleSecondaryButton(btnRefrescarLoc);
 
         panelLocBotones.add(btnNuevaLoc);
         panelLocBotones.add(btnEditarLoc);
@@ -214,38 +202,35 @@ public class VentanaOrganizador extends JFrame {
 
         // ================== PESTAÑA TIQUETES ==================
         JPanel panelTiquetes = new JPanel(new BorderLayout(10, 10));
-        panelTiquetes.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelTiquetes.setBackground(UIUtils.COLOR_CARD);
+        panelTiquetes.setBorder(UIUtils.softCardBorder());
         tabbedPane.addTab("Tiquetes", null, panelTiquetes, "Control de tiquetes");
 
-        JLabel lblTiqTitulo = new JLabel("Tiquetes");
-        lblTiqTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        JLabel lblTiqDesc = new JLabel("Consulta los tiquetes generados y su estado.");
-        lblTiqDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblTiqDesc.setForeground(new Color(100, 100, 100));
-
-        JPanel panelTiqHeader = new JPanel(new BorderLayout());
-        panelTiqHeader.setOpaque(false);
-        panelTiqHeader.add(lblTiqTitulo, BorderLayout.NORTH);
-        panelTiqHeader.add(lblTiqDesc, BorderLayout.SOUTH);
+        JPanel panelTiqHeader = UIUtils.createHeader(
+                "Tiquetes",
+                "Consulta los tiquetes generados y su estado.");
         panelTiquetes.add(panelTiqHeader, BorderLayout.NORTH);
 
         String[] columnasTiquetes = { "ID", "Evento", "Cliente", "Localidad", "Estado" };
         modeloTiquetes = new DefaultTableModel(columnasTiquetes, 0);
         tablaTiquetes = new JTable(modeloTiquetes);
         tablaTiquetes.setFillsViewportHeight(true);
+        UIUtils.stylizeTable(tablaTiquetes);
+
         JScrollPane scrollTiquetes = new JScrollPane(tablaTiquetes);
         scrollTiquetes.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         panelTiquetes.add(scrollTiquetes, BorderLayout.CENTER);
 
         JPanel panelTiqBotones = new JPanel();
-        panelTiqBotones.setBackground(Color.WHITE);
+        panelTiqBotones.setOpaque(false);
         panelTiqBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelTiquetes.add(panelTiqBotones, BorderLayout.SOUTH);
 
         JButton btnVerDetalleTiq = new JButton("Ver detalle");
         JButton btnRefrescarTiq = new JButton("Refrescar");
-        btnVerDetalleTiq.setFont(fontBoton);
-        btnRefrescarTiq.setFont(fontBoton);
+
+        UIUtils.stylePrimaryButton(btnVerDetalleTiq);
+        UIUtils.styleSecondaryButton(btnRefrescarTiq);
 
         panelTiqBotones.add(btnVerDetalleTiq);
         panelTiqBotones.add(btnRefrescarTiq);

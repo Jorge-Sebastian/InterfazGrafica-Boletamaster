@@ -3,7 +3,6 @@ package InterfazGrafica;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
-import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -49,66 +48,62 @@ public class VentanaAdmin extends JFrame {
 
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
-        contentPane.setBackground(new Color(245, 245, 245));
+        contentPane.setBackground(UIUtils.COLOR_BG);
         contentPane.setLayout(new BorderLayout(10, 10));
         setContentPane(contentPane);
 
         // ========== HEADER ==========
         JPanel panelHeader = new JPanel(new BorderLayout());
-        panelHeader.setBackground(Color.WHITE);
+        panelHeader.setBackground(UIUtils.COLOR_CARD);
         panelHeader.setBorder(new EmptyBorder(10, 20, 10, 20));
         contentPane.add(panelHeader, BorderLayout.NORTH);
 
         JLabel lblTitulo = new JLabel("Panel de administrador");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitulo.setFont(UIUtils.FONT_TITLE);
         panelHeader.add(lblTitulo, BorderLayout.WEST);
 
         lblTarifas = new JLabel();
-        lblTarifas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblTarifas.setForeground(new Color(100, 100, 100));
+        lblTarifas.setFont(UIUtils.FONT_SUBTITLE);
+        lblTarifas.setForeground(UIUtils.COLOR_MUTED);
         panelHeader.add(lblTarifas, BorderLayout.SOUTH);
 
         JButton btnConfigTarifas = new JButton("Configurar tarifas");
-        btnConfigTarifas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnConfigTarifas.setForeground(new Color(0, 0, 128));
+        UIUtils.stylePrimaryButton(btnConfigTarifas);
         panelHeader.add(btnConfigTarifas, BorderLayout.EAST);
 
-        // ========== CENTRO: TABLA EVENTOS ==========
-        JPanel panelCentro = new JPanel(new BorderLayout());
-        panelCentro.setOpaque(false);
+        // ========== CENTRO: CARD CON TABLA ==========
+        JPanel panelCentro = new JPanel(new BorderLayout(10, 10));
+        panelCentro.setBackground(UIUtils.COLOR_CARD);
+        panelCentro.setBorder(UIUtils.softCardBorder());
         contentPane.add(panelCentro, BorderLayout.CENTER);
 
-        JLabel lblEventosTitulo = new JLabel("Eventos del sistema");
-        lblEventosTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
-
-        JLabel lblEventosDesc = new JLabel("Aquí puedes ver los eventos y cancelar uno con reembolso a clientes.");
-        lblEventosDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblEventosDesc.setForeground(new Color(100, 100, 100));
-
-        JPanel panelTop = new JPanel(new BorderLayout());
-        panelTop.setOpaque(false);
-        panelTop.setBorder(new EmptyBorder(10, 10, 10, 10));
-        panelTop.add(lblEventosTitulo, BorderLayout.NORTH);
-        panelTop.add(lblEventosDesc, BorderLayout.SOUTH);
+        JPanel panelTop = UIUtils.createHeader(
+                "Eventos del sistema",
+                "Aquí puedes ver los eventos y cancelar uno con reembolso a clientes.");
         panelCentro.add(panelTop, BorderLayout.NORTH);
 
         String[] columnas = { "ID", "Nombre", "Fecha", "Venue", "Estado" };
         modeloEventos = new DefaultTableModel(columnas, 0);
         tablaEventos = new JTable(modeloEventos);
         tablaEventos.setFillsViewportHeight(true);
+        UIUtils.stylizeTable(tablaEventos);
+
         JScrollPane scrollEventos = new JScrollPane(tablaEventos);
         scrollEventos.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         panelCentro.add(scrollEventos, BorderLayout.CENTER);
 
         JPanel panelBotones = new JPanel();
-        panelBotones.setBackground(Color.WHITE);
+        panelBotones.setOpaque(false);
         panelBotones.setBorder(new EmptyBorder(10, 10, 10, 10));
         panelCentro.add(panelBotones, BorderLayout.SOUTH);
 
         JButton btnCancelarEvento = new JButton("Cancelar evento + reembolsar");
+        btnCancelarEvento.setForeground(new Color(0, 0, 128));
         JButton btnRefrescar = new JButton("Refrescar lista");
 
-        btnCancelarEvento.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btnRefrescar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        UIUtils.stylePrimaryButton(btnCancelarEvento);
+        UIUtils.styleSecondaryButton(btnRefrescar);
 
         panelBotones.add(btnCancelarEvento);
         panelBotones.add(btnRefrescar);
@@ -118,11 +113,8 @@ public class VentanaAdmin extends JFrame {
         cargarEventos();
 
         // ========== ACCIONES ==========
-
         btnRefrescar.addActionListener(e -> cargarEventos());
-
         btnConfigTarifas.addActionListener(e -> configurarTarifasGUI());
-
         btnCancelarEvento.addActionListener(e -> cancelarEventoGUI());
     }
 
@@ -153,10 +145,10 @@ public class VentanaAdmin extends JFrame {
             lblTarifas.setText("Tarifas no configuradas.");
             return;
         }
-        // Asumo que tu clase Administrador tiene estos getters
         double p = admin.getPorcentajeServicio();
         double c = admin.getCuotaEmision();
-        lblTarifas.setText(String.format("Tarifas actuales → Servicio: %.2f  |  Cuota de emisión: $%.0f", p, c));
+        lblTarifas.setText(String.format(
+                "Tarifas actuales → Servicio: %.2f  |  Cuota de emisión: $%.0f", p, c));
     }
 
     private void configurarTarifasGUI() {
@@ -230,7 +222,6 @@ public class VentanaAdmin extends JFrame {
 
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        // ==== Lógica igual a cancelarYReembolsar(sc) ====
         admin.cancelarEvento(seleccionado);
 
         int cont = 0;

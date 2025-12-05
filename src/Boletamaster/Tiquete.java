@@ -40,6 +40,23 @@ public abstract class Tiquete {
     public Localidad getLocalidad() { return localidad; }
     public double getPrecio() { return precio; }
 
+    /**
+     * Marca el tiquete como impreso, bloqueando transferencias posteriores.
+     */
+    public boolean marcarImpreso() {
+        if (estaImpreso()) return false;
+        if (!"VENDIDO".equalsIgnoreCase(estado) && !"TRANSFERIDO".equalsIgnoreCase(estado)) {
+            return false;
+        }
+        estado = "IMPRESO";
+        transferible = false;
+        return true;
+    }
+
+    public boolean estaImpreso() {
+        return "IMPRESO".equalsIgnoreCase(estado);
+    }
+
     public String[] toCsv(){
         String tipo = (this instanceof TiqueteNumerado) ? "NUM" : "SIMPLE";
         String asiento = (this instanceof TiqueteNumerado) ? ((TiqueteNumerado)this).getAsiento() : "";
