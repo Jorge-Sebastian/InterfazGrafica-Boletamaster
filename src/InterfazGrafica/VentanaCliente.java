@@ -201,6 +201,8 @@ public class VentanaCliente extends JFrame {
         panelMisTiqBotones.add(btnRefrescarTiq);
 
         // ---------- TAB 4: PERFIL (PLACEHOLDER) ----------
+        
+/*
         JPanel panelPerfil = new JPanel(new BorderLayout(10, 10));
         panelPerfil.setBackground(UIUtils.COLOR_CARD);
         panelPerfil.setBorder(UIUtils.softCardBorder());
@@ -220,6 +222,8 @@ public class VentanaCliente extends JFrame {
         lblPerfil.setForeground(new Color(80, 80, 80));
         centroPerfil.add(lblPerfil);
         panelPerfil.add(centroPerfil, BorderLayout.CENTER);
+*/
+        
 
         // ================== CARGA INICIAL ==================
         actualizarSaldoHeader();
